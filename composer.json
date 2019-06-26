@@ -1,0 +1,77 @@
+{
+    "name": "nenad/yii2-basic-template",
+    "description": "Improved Yii 2 Basic Application Template By Nenad Zivkovic",
+    "keywords": ["yii2", "framework", "basic", "improved", "application template", "nenad"],
+    "type": "project",
+    "license": "BSD-3-Clause",
+    "support": {
+        "tutorial": "http://www.freetuts.org/tutorial/view?id=6",
+        "source": "https://github.com/nenad-zivkovic/yii2-basic-template"
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=7.1.0",
+        "yiisoft/yii2": "*",
+        "yiisoft/yii2-bootstrap": "*",
+        "yiisoft/yii2-swiftmailer": "*",
+        "kartik-v/yii2-password": "@dev",
+        "kartik-v/yii2-widget-datepicker":"@dev",
+        "mdmsoft/yii2-autonumber": "~1.0",
+        "kartik-v/yii2-nav-x": "dev-master",
+        "kartik-v/yii2-widget-depdrop": "@dev",
+        "kartik-v/yii2-grid": "@dev",
+        "kartik-v/yii2-widget-select2": "@dev",
+        "kartik-v/yii2-checkbox-x": "@dev",
+        "kartik-v/yii2-widget-datetimepicker": "*",
+        "kartik-v/yii2-widget-timepicker": "*",
+        "insolita/yii2-migration-generator": "~2.3",
+        "yiisoft/yii2-jui": "^2.0",
+        "kartik-v/yii2-widget-typeahead": "*",
+        "hscstudio/yii2-export": "*",
+        "kartik-v/yii2-widget-fileinput": "@dev",
+        "keygenqt/yii2-autocomplete-ajax": "@dev",
+        "kartik-v/yii2-mpdf": "dev-master",
+        "yiisoft/yii2-httpclient": "^2.0",
+        "kartik-v/yii2-field-range": "*",
+        "phpoffice/phpspreadsheet": "^1.6",
+        "kartik-v/yii2-date-range": "dev-master"
+    },
+    "require-dev": {
+        "codeception/codeception": "*",
+        "yiisoft/yii2-debug": "*",
+        "yiisoft/yii2-gii": "*",
+        "yiisoft/yii2-faker": "*",
+        "codeception/specify": "*",
+        "codeception/verify": "*"
+    },
+    "config": {
+        "vendor-dir": "_protected/vendor",
+        "process-timeout": 1800
+    },
+    "scripts": {
+        "post-create-project-cmd": [
+            "yii\\composer\\Installer::postCreateProject"
+        ]
+    },
+    "extra": {
+        "yii\\composer\\Installer::postCreateProject": {
+            "setPermission": [
+                {
+                    "_protected/runtime": "0777",
+                    "_protected/runtime/mail": "0777",
+                    "_protected/runtime/session": "0777",
+                    "_protected/yii": "0755",
+                    "assets": "0777",
+                    "uploads": "0777"
+                }
+            ],
+            "generateCookieValidationKey": [
+                "_protected/config/web.php"
+            ]
+        },
+        "asset-installer-paths": {
+            "npm-asset-library": "_protected/vendor/npm",
+            "bower-asset-library": "_protected/vendor/bower"
+        }
+    }
+}
