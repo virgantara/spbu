@@ -37,7 +37,7 @@ class Perkiraan extends \yii\db\ActiveRecord
     {
         return [
             [['kode', 'nama', 'parent','level'], 'required'],
-            [['kode'],'validateItemExist'],
+            [['kode'],'validateItemExist','on'=>'insert'],
             [['parent', 'perusahaan_id','level'], 'integer'],
             [['kode'], 'string', 'max' => 20],
             [['nama'], 'string', 'max' => 100],
@@ -97,6 +97,11 @@ class Perkiraan extends \yii\db\ActiveRecord
         return $listData;
     } 
 
+    public function getNamaParent()
+    {
+        return $this->parent0->nama;
+    }
+
     /**
      * @return \yii\db\ActiveQuery
      */
@@ -113,10 +118,7 @@ class Perkiraan extends \yii\db\ActiveRecord
         return $this->hasOne(Perkiraan::className(), ['id' => 'parent']);
     }
 
-    public function getNamaParent()
-    {
-        return $this->parent0->nama;
-    }
+    
 
     /**
      * @return \yii\db\ActiveQuery
@@ -132,5 +134,36 @@ class Perkiraan extends \yii\db\ActiveRecord
     public function getPerusahaan()
     {
         return $this->hasOne(Perusahaan::className(), ['id_perusahaan' => 'perusahaan_id']);
+    }
+
+    public function getJurnals()
+    {
+        return $this->hasMany(Jurnal::className(), ['perkiraan_id' => 'id']);
+    }
+
+    public function getPiutangs()
+    {
+        return $this->hasMany(Piutang::className(), ['perkiraan_id' => 'id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getTransaksis()
+    {
+        return $this->hasMany(Transaksi::className(), ['perkiraan_id' => 'id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getTransaksis0()
+    {
+        return $this->hasMany(Transaksi::className(), ['perkiraan_lawan_id' => 'id']);
+    }
+
+    public function getNeracas()
+    {
+        return $this->hasMany(Neraca::className(), ['perkiraan_id' => 'id']);
     }
 }

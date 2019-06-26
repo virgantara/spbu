@@ -92,11 +92,10 @@ class PerkiraanController extends Controller
     public function actionIndex()
     {
         $searchModel = new PerkiraanSearch();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $listAkun = $searchModel->searchTop();
 
         return $this->render('index', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
+            'listAkun' => $listAkun,
         ]);
     }
 
@@ -120,7 +119,7 @@ class PerkiraanController extends Controller
      */
     public function actionCreate()
     {
-        $model = new Perkiraan();
+        $model = new Perkiraan(['scenario' => 'insert']);
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
             Yii::$app->session->setFlash('success', "Data tersimpan");

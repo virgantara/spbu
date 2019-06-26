@@ -35,6 +35,22 @@ class PerkiraanSearch extends Perkiraan
         return Model::scenarios();
     }
 
+    public function searchTop()
+    {
+        $query = Perkiraan::find();
+
+
+        $userPt = Yii::$app->user->identity->perusahaan_id;
+            
+        $query->andWhere(['perusahaan_id'=>$userPt,'level' => 1]);
+
+        // grid filtering conditions
+        $query->orderBy(['kode'=>'ASC']);
+
+
+        return $query->all();
+    }
+
     /**
      * Creates data provider instance with search query applied
      *
