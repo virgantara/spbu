@@ -30,6 +30,66 @@ class JurnalController extends Controller
         ];
     }
 
+    public function actionLabaRugi()
+    {
+        $searchModel = new JurnalSearch();
+        
+        $pendapatan = Perkiraan::find();
+        $pendapatan->where([
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id,
+            'kode' => 4
+        ]);
+
+        $beban = Perkiraan::find();
+        $beban->where([
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id,
+            'kode' => 5
+        ]);
+
+        $results = [];
+        $params = Yii::$app->request->queryParams;
+        $pendapatan = $pendapatan->one();
+        
+        foreach($pendapatan->perkiraans as $q1 => $m1)
+        {
+            foreach($m1->perkiraans as $q2 => $m2)
+            {
+                $params['Jurnal']['perkiraan_id'] = $m2->id;
+                $sumDebet = $searchModel->searchByTanggalAkun($params,'debet');
+                $sumKredit = $searchModel->searchByTanggalAkun($params,'kredit');
+                $results['pendapatan'][$m2->id] = [
+                    'debet' => $sumDebet,
+                    'kredit' => $sumKredit
+                ];
+            }
+        }
+
+        $beban = $beban->one();
+        foreach($beban->perkiraans as $q1 => $m1)
+        {
+            foreach($m1->perkiraans as $q2 => $m2)
+            {
+                $params['Jurnal']['perkiraan_id'] = $m2->id;
+                $sumDebet = $searchModel->searchByTanggalAkun($params,'debet');
+                $sumKredit = $searchModel->searchByTanggalAkun($params,'kredit');
+                $results['beban'][$m2->id] = [
+                    'debet' => $sumDebet,
+                    'kredit' => $sumKredit
+                ];
+            }
+        }
+        $model = new Jurnal;
+        // print_r($results);exit;
+        return $this->render('lb', [
+            'searchModel' => $searchModel,
+            'model' => $model,
+            'dataProvider' => $dataProvider,
+            'pendapatan' => $pendapatan,
+            'beban' => $beban,
+            'results'=>$results
+        ]);
+    }
+
     public function actionBukuBesar()
     {
 

@@ -104,13 +104,29 @@ class JurnalSearch extends Jurnal
     public function searchByTanggalAkun($params,$p = 'debet')
     {
         $query = Jurnal::find();
-        
+
         $this->perkiraan_id = $params['Jurnal']['perkiraan_id'];
         $this->tanggal_awal = date('Y-m-d',strtotime($params['Jurnal']['tanggal_awal']));
         $this->tanggal_akhir = date('Y-m-d',strtotime($params['Jurnal']['tanggal_akhir']));
         $query->where([
             'perkiraan_id' => $this->perkiraan_id
         ]);
+        $query->andFilterWhere(['between', 'tanggal', $this->tanggal_awal, $this->tanggal_akhir]);
+
+        $query->orderBy(['tanggal'=>SORT_ASC]);
+        if($p =='debet')
+            return $query->sum('debet');
+        else
+            return $query->sum('kredit');
+    }
+
+    public function sumJumlah($params,$p = 'debet')
+    {
+        $query = Jurnal::find();
+        
+        $this->tanggal_awal = date('Y-m-d',strtotime($params['Jurnal']['tanggal_awal']));
+        $this->tanggal_akhir = date('Y-m-d',strtotime($params['Jurnal']['tanggal_akhir']));
+        $query->where(['perusahaan_id'=>Yii::$app->user->identity->perusahaan_id]);
         $query->andFilterWhere(['between', 'tanggal', $this->tanggal_awal, $this->tanggal_akhir]);
 
         $query->orderBy(['tanggal'=>SORT_ASC]);
