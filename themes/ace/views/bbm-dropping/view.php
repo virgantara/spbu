@@ -4,13 +4,14 @@ use yii\helpers\Html;
 use yii\widgets\DetailView;
 
 /* @var $this yii\web\View */
-/* @var $model app\models\BbmDispenserLog */
+/* @var $model app\models\BbmDropping */
 
 $this->title = $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Bbm Dispenser Logs', 'url' => ['index']];
+$this->params['breadcrumbs'][] = ['label' => 'Bbm Droppings', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+\yii\web\YiiAsset::register($this);
 ?>
-<div class="bbm-dispenser-log-view">
+<div class="bbm-dropping-view">
 
     <h1><?= Html::encode($this->title) ?></h1>
 
@@ -28,12 +29,14 @@ $this->params['breadcrumbs'][] = $this->title;
     <?= DetailView::widget([
         'model' => $model,
         'attributes' => [
-            'dispenser.nama',
-            'shift.nama',
-            // 'perusahaan_id',
-            'jumlah',
+            'bbmFaktur.no_so',
+            'no_lo',
             'tanggal',
+            'jam',
+            'barang.nama_barang',
+            'jumlah',
             'created_at',
+            'updated_at',
         ],
     ]) ?>
 

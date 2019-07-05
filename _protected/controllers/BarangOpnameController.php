@@ -264,6 +264,7 @@ class BarangOpnameController extends Controller
             $query->andWhere(['departemen_id'=>$_POST['dept_id']]);
             // $query->andWhere(['departemen_id'=>Yii::$app->user->identity->departemen]);
             // $query->andWhere(['tahun'=>$tahun.$bulan]);
+            $query->andWhere(['barang.jenis_barang_id'=>$_POST['jenis_barang_id']]);
             $query->andWhere(['barang.is_hapus'=>0]);
             $query->joinWith(['barang as barang']);
             $query->orderBy(['barang.nama_barang'=>SORT_ASC]);
@@ -278,10 +279,11 @@ class BarangOpnameController extends Controller
             $tahun = date('Y',strtotime($_POST['tanggal_pilih']));
             
 
+
             $query = DepartemenStok::find();
             $query->where(['<>','barang.nama_barang','-']);
             $query->andWhere(['departemen_id'=>$_POST['dept_id_pilih']]);
-            // $query->andWhere(['departemen_id'=>Yii::$app->user->identity->departemen]);
+            $query->andWhere(['barang.jenis_barang_id'=>$_POST['jenis_barang_id']]);
             $query->andWhere(['barang.is_hapus'=>0]);
             $query->joinWith(['barang as barang']);
             $query->orderBy(['barang.nama_barang'=>SORT_ASC]);
@@ -294,25 +296,31 @@ class BarangOpnameController extends Controller
             $tahun_lalu = date('Y',strtotime($prev_month_ts));
 
             $transaction = \Yii::$app->db->beginTransaction();
-
             try 
             {
 
                 foreach($list as $m)
                 {
                     $stok_riil = $_POST['stok_riil_'.$m->id] ?: 0;
-
+                    $batch_no = $_POST['batch_no_'.$m->id] ?: '';
+                    $exp_date = $_POST['exp_date_'.$m->id] ?: date('Y-m-d');
+                    $stok = $m->stok;
+                    $selisih = $stok - $stok_riil;
                     $model = BarangOpname::find()->where([
                         'departemen_stok_id' => $m->id,
                         'bulan' => $bulan,
                         'tahun' => $tahun.$bulan
                     ])->one();
 
-
-                    $opnameLalu = BarangOpname::find()->where([
-                        'barang_id' => $m->barang_id,
-                        'tahun' => $tahun_lalu.$bulan_lalu
-                    ])->one();
+                    $m->stok_bulan_lalu = $m->stok;
+                    $m->stok = $stok_riil;
+                    $m->batch_no = $batch_no;
+                    $m->exp_date = $exp_date;
+                    if(!$m->save())
+                    {
+                        print_r($m->getErrors());exit;
+                    }
+                    
 
                     if(empty($model))
                         $model = new BarangOpname;
@@ -320,15 +328,19 @@ class BarangOpnameController extends Controller
                     $model->barang_id = $m->barang_id;
                     $model->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
                     $model->departemen_stok_id = $m->id;
-                    $model->stok = $m->stok;
+                    $model->stok = $stok_riil;
                     $model->stok_riil = $stok_riil;
-                    $model->stok_lalu = !empty($opnameLalu) ? $opnameLalu->stok_riil : 0;
+                    $model->stok_lalu = $stok;
+                    $model->selisih = $selisih;
+                    $model->harga_beli = $m->barang->harga_beli;
+                    $model->harga_jual = $m->barang->harga_jual;
                     $model->bulan = $bulan;
                     $model->tahun = $tahun.$bulan;
                     $model->tanggal = date('Y-m-d');
                     
 
-                    if($model->validate()){
+                    if($model->validate())
+                    {
 
                         $model->save();
 
@@ -346,15 +358,111 @@ class BarangOpnameController extends Controller
                             
 
                         if(empty($ks))
-                            \app\models\KartuStok::createKartuStok($params);
-                        else{
-                            \app\models\KartuStok::updateKartuStok($params);
+                        {
+                            $m = new \app\models\KartuStok;
+                            $m->barang_id = $params['barang_id'];
+                            $m->qty_in = ceil($params['qty']);
+                            $prevStok = \app\models\KartuStok::getPrevStok($params);
+                            if(!empty($prevStok))
+                            {
 
+                                if(count($prevStok) > 1)
+                                {
+                                    $m->sisa_lalu = $prevStok[1]->sisa;
+                                    $m->sisa = $m->qty_in;
+                                    $m->prev_id = $prevStok[1]->id;
+                                }
+
+                                else if (count($prevStok) == 1)
+                                {
+                                    $m->sisa_lalu = $prevStok[0]->sisa;
+                                    $m->sisa = $m->qty_in;
+                                    $m->prev_id = $prevStok[0]->id;
+                                }
+
+                            }
+
+                            else
+                            {
+                                $m->sisa_lalu = 0;
+                                $m->sisa = $m->qty_in;
+                            }
+                           
+                            $m->kode_transaksi = !empty($params['kode_transaksi']) ? $params['kode_transaksi'] : '-';
+                            $m->tanggal = $params['tanggal'];
+                            $m->departemen_id = $params['departemen_id'];
+                            $m->stok_id = $params['stok_id'];
+                            $m->keterangan = $params['keterangan'];
+                            if($m->validate())
+                                $m->save();
+                            else{
+                                $errors = '';
+                                foreach($m->getErrors() as $attribute){
+                                    foreach($attribute as $error){
+                                        $errors .= $error.' ';
+                                    }
+                                }
+                                    
+                                print_r($errors);exit;             
+                            }
                         }
+                        else{
+                            $m = \app\models\KartuStok::find()->where([
+                                'barang_id' => $params['barang_id'],
+                                'departemen_id' => $params['departemen_id'],
+                                'kode_transaksi' => $params['kode_transaksi'] 
+                            ])->one();
+                            if(!empty($m))
+                            {
+                                $m->barang_id = $params['barang_id'];
+                                $m->qty_in = ceil($params['qty']);
+                                $prevStok = \app\models\KartuStok::getPrevStok($params);
+                                if(!empty($prevStok))
+                                {
+
+                                    if(count($prevStok) > 1)
+                                    {
+                                        $m->sisa_lalu = $prevStok[1]->sisa;
+                                        $m->sisa = $m->qty_in;
+                                        $m->prev_id = $prevStok[1]->id;
+                                    }
+
+                                    else if (count($prevStok) == 1)
+                                    {
+                                        $m->sisa_lalu = $prevStok[0]->sisa;
+                                        $m->sisa = $m->qty_in;
+                                        $m->prev_id = $prevStok[0]->id;
+                                    }
+
+                                }
+
+                                else
+                                {
+                                    $m->sisa_lalu = 0;
+                                    $m->sisa = $m->qty_in;
+                                }
+                               
+                                if($m->validate())
+                                    $m->save();
+                                else{
+                                    $errors = '';
+                                    foreach($m->getErrors() as $attribute){
+                                        foreach($attribute as $error){
+                                            $errors .= $error.' ';
+                                        }
+                                    }
+                                        
+                                    print_r($errors);exit;             
+                                }    
+                            }
+                        }
+
+
                     }
                     else{
                         
-                        // $errors = \app\helpers\MyHelper::logError($m);
+                        $errors = \app\helpers\MyHelper::logError($m);
+                        print_r($errors);exit;
                         return $this->render('create', [
                             'list' => $list,
                             'model' => $model,
@@ -363,7 +471,6 @@ class BarangOpnameController extends Controller
                     
                 }
                 Yii::$app->session->setFlash('success', "Data tersimpan");
-
                 $transaction->commit();
                 return $this->redirect(['create']);
             } catch (\Exception $e) {

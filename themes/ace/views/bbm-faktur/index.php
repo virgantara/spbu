@@ -46,11 +46,11 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'is_selesai',
                 'label' => 'Status',
                 'format' => 'raw',
-                'filter'=>["1"=>"Selesai","0"=>"Belum"],
+                'filter'=>["1"=>"Sudah Disetujui","0"=>"Belum disetujui"],
                 'value'=>function($model,$url){
 
                     $st = $model->is_selesai == 1 ? 'success' : 'danger';
-                    $label = $model->is_selesai == 1 ? 'Selesai' : 'Belum';
+                    $label = $model->is_selesai == 1 ? 'Sudah Disetujui' : 'Belum disetujui';
                     return '<button type="button" class="btn btn-'.$st.' btn-sm" >
                                <span>'.$label.'</span>
                             </button>';

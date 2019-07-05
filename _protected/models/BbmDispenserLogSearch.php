@@ -12,6 +12,11 @@ use app\models\BbmDispenserLog;
  */
 class BbmDispenserLogSearch extends BbmDispenserLog
 {
+
+    public $namaDispenser;
+    public $namaShift;
+    public $namaBarang;
+
     /**
      * {@inheritdoc}
      */
@@ -20,7 +25,7 @@ class BbmDispenserLogSearch extends BbmDispenserLog
         return [
             [['id', 'dispenser_id', 'shift_id', 'perusahaan_id'], 'integer'],
             [['jumlah'], 'number'],
-            [['tanggal', 'created'], 'safe'],
+            [['tanggal', 'created_at','namaShift','namaDispenser','namaBarang'], 'safe'],
         ];
     }
 
@@ -50,6 +55,23 @@ class BbmDispenserLogSearch extends BbmDispenserLog
             'query' => $query,
         ]);
 
+        $query->joinWith(['dispenser as d','shift as s','barang as b']);
+
+        $dataProvider->sort->attributes['namaShift'] = [
+            'asc' => ['s.nama'=>SORT_ASC],
+            'desc' => ['s.nama'=>SORT_DESC]
+        ];
+
+        $dataProvider->sort->attributes['namaDispenser'] = [
+            'asc' => ['d.nama'=>SORT_ASC],
+            'desc' => ['d.nama'=>SORT_DESC]
+        ];
+
+        $dataProvider->sort->attributes['namaBarang'] = [
+            'asc' => ['b.nama_barang'=>SORT_ASC],
+            'desc' => ['b.nama_barang'=>SORT_DESC]
+        ];
+
         $this->load($params);
 
         if (!$this->validate()) {
@@ -59,15 +81,9 @@ class BbmDispenserLogSearch extends BbmDispenserLog
         }
 
         // grid filtering conditions
-        $query->andFilterWhere([
-            'id' => $this->id,
-            'dispenser_id' => $this->dispenser_id,
-            'shift_id' => $this->shift_id,
-            'perusahaan_id' => $this->perusahaan_id,
-            'jumlah' => $this->jumlah,
-            'tanggal' => $this->tanggal,
-            'created' => $this->created,
-        ]);
+        $query->andFilterWhere(['like', 's.nama', $this->namaShift])
+        ->andFilterWhere(['like', 'd.nama', $this->namaDispenser])
+        ->andFilterWhere(['like', 'b.nama_barang', $this->namaBarang]);
 
         return $dataProvider;
     }

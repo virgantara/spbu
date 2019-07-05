@@ -38,16 +38,17 @@ class BbmDispenserLogController extends Controller
             $query = BbmDispenserLog::find()->where([
                 'dispenser_id' => $dataItem['dispenser_id'],
                 'barang_id' => $dataItem['barang_id'],
-
+                
             ]);
 
-            $tanggal = date('Y-m-d',strtotime($dataItem['tanggal']));
-            $prevDate = date('Y-m-d',strtotime($tanggal.' -1 month'));
-            $bulan = date('m',strtotime($prevDate));
-            $tahun = date('Y',strtotime($prevDate));
-            $prevDate = $tahun.'-'.$bulan.'-01';
-            $lastDate = $tahun.'-'.$bulan.'-'.date('t');
-            $query->andWhere(['between','tanggal',$prevDate,$lastDate]);
+            // $tanggal = date('Y-m-d',strtotime($dataItem['tanggal']));
+            // $prevDate = date('Y-m-d',strtotime($tanggal.' -1 month'));
+            // $bulan = date('m',strtotime($prevDate));
+            // $tahun = date('Y',strtotime($prevDate));
+            // $prevDate = $tahun.'-'.$bulan.'-01';
+            // $lastDate = $tahun.'-'.$bulan.'-'.date('t');
+            // $query->andWhere(['between','tanggal',$prevDate,$lastDate]);
+            $query->orderBy(['id'=>SORT_DESC]);
             $hasil = $query->one();
 
             $jumlah = !empty($hasil) ? $hasil->jumlah : 0;
@@ -98,14 +99,19 @@ class BbmDispenserLogController extends Controller
     public function actionCreate()
     {
         $model = new BbmDispenserLog();
-
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+        $model->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+        if ($model->load(Yii::$app->request->post())) {
+            $model->tanggal = date('Y-m-d',strtotime($model->tanggal));
+            $model->save();
             return $this->redirect(['view', 'id' => $model->id]);
+            
+
         }
 
         return $this->render('create', [
             'model' => $model,
         ]);
+            
     }
 
     /**
@@ -119,7 +125,9 @@ class BbmDispenserLogController extends Controller
     {
         $model = $this->findModel($id);
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+        if ($model->load(Yii::$app->request->post())) {
+            $model->tanggal = date('Y-m-d',strtotime($model->tanggal));
+            $model->save();
             return $this->redirect(['view', 'id' => $model->id]);
         }
 

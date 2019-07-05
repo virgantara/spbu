@@ -2,26 +2,24 @@
 
 namespace app\models;
 
-use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use app\models\Departemen;
+use app\models\BbmDropping;
 
 /**
- * PerusahaanSubSearch represents the model behind the search form of `app\models\PerusahaanSub`.
+ * BbmDroppingSearch represents the model behind the search form of `app\models\BbmDropping`.
  */
-class DepartemenSearch extends Departemen
+class BbmDroppingSearch extends BbmDropping
 {
-
-    public $namaPerusahaan;
     /**
      * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['id', 'perusahaan_id'], 'integer'],
-            [['nama', 'created','namaPerusahaan','namaUser','kode'], 'safe'],
+            [['id', 'bbm_faktur_id', 'barang_id'], 'integer'],
+            [['no_lo', 'tanggal', 'jam', 'created_at', 'updated_at'], 'safe'],
+            [['jumlah'], 'number'],
         ];
     }
 
@@ -43,24 +41,13 @@ class DepartemenSearch extends Departemen
      */
     public function search($params)
     {
-        $query = Departemen::find();
-
-        $query->joinWith(['perusahaan as perusahaan']);
+        $query = BbmDropping::find();
 
         // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
         ]);
-
-         $dataProvider->sort->attributes['namaPerusahaan'] = [
-            'asc' => ['perusahaan.nama'=>SORT_ASC],
-            'desc' => ['perusahaan.nama'=>SORT_DESC]
-        ];
-
-        if (!Yii::$app->user->can('theCreator')) {
-            $query->where(['perusahaan_id'=> Yii::$app->user->identity->perusahaan_id]);
-        }
 
         $this->load($params);
 
@@ -73,14 +60,16 @@ class DepartemenSearch extends Departemen
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
-            'perusahaan_id' => $this->perusahaan_id,
-           
-            'created' => $this->created,
+            'bbm_faktur_id' => $this->bbm_faktur_id,
+            'tanggal' => $this->tanggal,
+            'jam' => $this->jam,
+            'barang_id' => $this->barang_id,
+            'jumlah' => $this->jumlah,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ]);
 
-        $query->andFilterWhere(['like', 'nama', $this->nama])
-        ->andFilterWhere(['like', 'kode', $this->kode])
-        ->andFilterWhere(['like', 'perusahaan.nama', $this->namaPerusahaan]);
+        $query->andFilterWhere(['like', 'no_lo', $this->no_lo]);
 
         return $dataProvider;
     }

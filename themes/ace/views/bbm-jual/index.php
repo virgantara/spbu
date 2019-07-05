@@ -8,6 +8,7 @@ use yii\widgets\ActiveForm;
 use app\models\Kas;
 use \kartik\grid\GridView;
 use app\models\SalesMasterBarang;
+use app\models\Departemen;
 
 /* @var $this yii\web\View */
 /* @var $searchModel app\models\KasSearch */
@@ -48,7 +49,7 @@ $form = ActiveForm::begin();
     $tahun = !empty($_POST['tahun']) ? $_POST['tahun'] : date('Y');
 
     $listBarang = SalesMasterBarang::getListBarangs();
-
+    // $listDispenser = Departemen::getListDepartemens();
     ?>
 
     <div class="col-xs-4 col-md-3 col-lg-2">
@@ -61,6 +62,7 @@ $form = ActiveForm::begin();
        
         <?= Html::dropDownList('tahun', $tahun,$tahuns,['class'=>'form-control']); ?>
     </div>
+   
     <div class="col-xs-4 col-md-3 col-lg-2">
         
         <?= Html::dropDownList('barang_id',!empty($_POST['barang_id']) ? $_POST['barang_id'] : '',$listBarang,['class'=>'form-control']); ?>
@@ -74,29 +76,19 @@ $form = ActiveForm::begin();
     ?>
 
 <?php 
-if(!empty($_POST['barang_id']))
+if(!empty($results))
 {
-    $countDispenser = count($listDispenser->models);
+    // $countDispenser = count($listDispenser);
 ?>
-<table class="table table-striped">
+
+
+<table class="table table-striped table-hovered table-bordered">
     <thead>
     <tr>
     
-    <th colspan="3" style="text-align: center;"><?=$bulans[$bulan];?></th>
+    <th colspan="6" style="text-align: center;"><?=$bulans[$bulan];?></th>
     
-    <?php 
-    $firstDispenserId=0;
-    $i=0;
-    foreach($listDispenser->models as $disp)
-    {
-        if($i==0)
-            $firstDispenserId = $disp->id;
-
-        $i++;
-        // print_r($disp);
-        echo '<th colspan="3" style="text-align: center;">'.$disp->nama.'</th>';
-    }
-    ?>
+    
     <th colspan="3" style="text-align: center;"><?=$barang->nama_barang;?></th>
 </tr>
 <tr>
@@ -104,154 +96,79 @@ if(!empty($_POST['barang_id']))
     <th style="text-align: center;">Tgl</th>
     <th style="text-align: center;">Shift</th>
      <?php 
-     foreach($listDispenser->models as $disp)
-    {
+
         // print_r($disp);
         echo '<th style="text-align: center;">Akhir</th>';
         echo '<th style="text-align: center;">Awal</th>';
         echo '<th style="text-align: center;">Saldo</th>';
-    }
+    
     ?>
-    <th style="text-align: center;">Total Liter</th>
     <th style="text-align: center;">Harga</th>
     <th style="text-align: center;">Total (Rp)</th>
 </tr>
 </thead>
+<?php 
+$total_saldo_all = 0;
+$total = 0;
+foreach($listDispenser as $q => $d)
+{
+
+
+?>
+
+
 <tbody>
-    <?php 
-    $idx = 0;
-    $isFirstDate = false;
-    $total_liter = 0;
-    $harga = 0;
-    $max_date = date('t',strtotime($_POST['tahun'].'-'.$_POST['bulan'].'-01'));
-    for($i = 0;$i < $max_date;$i++)
+
+<tr>
+    <td colspan="8"><?=$d;?></td>
+</tr>
+<?php 
+
+    foreach($results[$q] as $q => $item)
     {
-        
-        
-        $tgl = str_pad(($i+1), 2, '0', STR_PAD_LEFT);
-        $fulldate = $_POST['tahun'].'-'.$_POST['bulan'].'-'.$tgl;
-        // $listJualPerTanggal = \app\models\BbmJual::getListJualPerTanggal($fulldate, $barang->id_barang);
-        // $listShift = \app\models\BbmJual::getListJualShifts($fulldate,$barang->id_barang);
 
-         $listMasterShift = \app\models\Shift::getDataProviderShifts();
-       
-            $isExist = false;
-            foreach($listMasterShift->models as $shifts)
-            {
-                // $listPerShift = \app\models\BbmJual::getListJualPerShift($fulldate,$barang->id_barang,$shifts->id);
+        $saldo = $item->qty;
+        $harga = $item->harga;
+        $subtotal = $saldo * $harga;
 
-                // foreach ($listPerShift as $shift) 
-                // {
-                    # code...
-                
-                    $idx++;
-                    // print_r($shift->one());exit;
-                    
-                     $subtotal_liter = 0;
-                ?>
-                <tr>
-                <td><?=($idx);?></td>
-                 <td><?=Yii::$app->formatter->asDate($fulldate);?></td>
-                 <td><?=$shifts->nama;?></td>
-                 
-               
-                <?php 
-$doubleShiftJual = \app\models\BbmJual::getItemJual($fulldate, $barang->id_barang,$shifts->id,$firstDispenserId);
-
-                $isExist = !empty($doubleShiftJual);
-                    foreach($listDispenser->models as $disp)
-                    {
-                        
-                        $model =\app\models\BbmJual::getItemJual($fulldate, $barang->id_barang,$shifts->id,$disp->id);
-                        $model = !empty($model[0]) ? $model[0] : null;
-                        $stok_awal = !empty($model) ? $model->stok_awal : 0;
-                        $stok_akhir = !empty($model) ? $model->stok_akhir : 0;
-                        $saldo = $stok_akhir - $stok_awal;
-                        $subtotal_liter += $saldo;
-                        
-                        $harga = !empty($model) && $model->harga != 0 ? $model->harga : $harga;
-                        ?>
-                         <td style="text-align: right;">
-                            <?=Yii::$app->formatter->asInteger($stok_akhir);?></td>
-                         <td style="text-align: right;"><?=Yii::$app->formatter->asInteger($stok_awal);?></td>
-                         <td style="text-align: right;"><?=Yii::$app->formatter->asInteger($saldo);?></td>
-                        <?php
-                    }
-
-                     $total_liter += $subtotal_liter;
-                    ?>
-                    <td style="text-align: right;"><?=$subtotal_liter;?></td>
-                     <td style="text-align: right;"><?=Yii::$app->formatter->asInteger($harga);?></td>
-                     <td style="text-align: right;"><?=Yii::$app->formatter->asInteger($subtotal_liter * $harga);?></td>
-                     </tr>
-                    <?php
-                // }
-                if($isExist)
-                {
-                     $model =\app\models\BbmJual::getItemJual($fulldate, $barang->id_barang,$shifts->id,$firstDispenserId);
-                     $model = !empty($model[1]) ? $model[1] : null;
-                     if(empty($model)) continue;
-                    ?>
-                 <tr>
-                <td><?=($idx);?></td>
-                 <td><?=Yii::$app->formatter->asDate($fulldate);?></td>
-                 <td><?=$shifts->nama;?></td>
-                 
-               
-                <?php 
-               
-
-                               
-                    foreach($listDispenser->models as $disp)
-                    {
-                        
-                        // $model =\app\models\BbmJual::getItemJual($fulldate, $barang->id_barang,$shifts->id,$disp->id);
-                        $stok_awal = !empty($model) ? $model->stok_awal : 0;
-                        $stok_akhir = !empty($model) ? $model->stok_akhir : 0;
-                        $saldo = $stok_akhir - $stok_awal;
-                        $subtotal_liter += $saldo;
-                        
-                        $harga = !empty($model) && $model->harga != 0 ? $model->harga : $harga;
-                        ?>
-                         <td style="text-align: right;">
-                            <?=Yii::$app->formatter->asInteger($stok_akhir);?></td>
-                         <td style="text-align: right;"><?=Yii::$app->formatter->asInteger($stok_awal);?></td>
-                         <td style="text-align: right;"><?=Yii::$app->formatter->asInteger($saldo);?></td>
-                        <?php
-                    }
-
-                     $total_liter += $subtotal_liter;
-                    ?>
-                    <td style="text-align: right;"><?=$subtotal_liter;?></td>
-                     <td style="text-align: right;"><?=Yii::$app->formatter->asInteger($harga);?></td>
-                     <td style="text-align: right;"><?=Yii::$app->formatter->asInteger($subtotal_liter * $harga);?></td>
-                     </tr>
-                    <?php
-                }
-      
-                }
-
-
-                
-        
-    }
-    ?>
+        $total_saldo_all += $saldo;
+        $total += $subtotal;
+?>
+    
     <tr>
-         <td colspan="<?=$countDispenser*3 + 3;?>" style="text-align: right"><strong>TOTAL</strong></td>
-         <td style="text-align: right"><strong><?=$total_liter;?></strong></td>
-         <td style="text-align: right"><strong><?=Yii::$app->formatter->asInteger($harga);?></strong></td>
-         <td style="text-align: right"><strong><?=Yii::$app->formatter->asInteger($total_liter * $harga);?></strong></td>
+    <td style="text-align: center;"><?=($q+1);?></td>
+     <td style="text-align: center;"><?=Yii::$app->formatter->asDate($item->tanggal);?></td>
+     <td style="text-align: center;"><?=$item->shift->nama;?></td>
+    <td style="text-align: right;"><?=$item->stok_akhir;?></td>
+    <td style="text-align: right;"><?=$item->stok_awal;?></td>
+    <td style="text-align: right;"><?=$saldo;?></td>
+     <td style="text-align: right;"><?=Yii::$app->formatter->asInteger($harga);?></td>
+     <td style="text-align: right;"><?=Yii::$app->formatter->asInteger($subtotal);?></td>
      </tr>
+<?php 
+    }
 
+
+}
+?>        
+    
 </tbody>
+<tfoot>
+    <tr>
+        <td colspan="5" style="text-align: right">Total</td>
+        <td style="text-align: right;"><?=$total_saldo_all;?></td>
+        <td></td>
+        <td style="text-align: right;"><?=Yii::$app->formatter->asInteger($total);?></td>
+    </tr>
+</tfoot>
 </table>
 <?php
 }
 
-else if(empty($listJualTanggal->models) && !empty($_POST['barang_id'])){
+else if(empty($results)){
 ?>
 
-<div class="alert alert-warning">Data Tidak Ditemukan</div>
+<div class="alert alert-info">Data Tidak Ditemukan</div>
 <?php
 }
 ?>

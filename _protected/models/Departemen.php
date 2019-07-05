@@ -120,7 +120,7 @@ class Departemen extends \yii\db\ActiveRecord
         $userLevel = Yii::$app->user->identity->access_role;    
             
         $query=Departemen::find();
-        if($userLevel != 'admin' && $userLevel == 'operatorCabang'){
+        if($userLevel != 'admin' && ($userLevel == 'operatorCabang' || $userLevel == 'adminSpbu')){
             $userPt = Yii::$app->user->identity->perusahaan_id;
 
             $query->where('perusahaan_id = :p2' ,[':p2'=>$userPt]);

@@ -38,8 +38,8 @@ class BbmDispenserLog extends \yii\db\ActiveRecord
             [['dispenser_id', 'shift_id', 'perusahaan_id', 'tanggal'], 'required'],
             [['dispenser_id', 'shift_id', 'perusahaan_id'], 'integer'],
             [['jumlah'], 'number'],
-            [['tanggal', 'created'], 'safe'],
-            [['dispenser_id'], 'exist', 'skipOnError' => true, 'targetClass' => BbmDispenser::className(), 'targetAttribute' => ['dispenser_id' => 'id']],
+            [['tanggal', 'created_at'], 'safe'],
+            [['dispenser_id'], 'exist', 'skipOnError' => true, 'targetClass' => Departemen::className(), 'targetAttribute' => ['dispenser_id' => 'id']],
             [['perusahaan_id'], 'exist', 'skipOnError' => true, 'targetClass' => Perusahaan::className(), 'targetAttribute' => ['perusahaan_id' => 'id_perusahaan']],
             [['shift_id'], 'exist', 'skipOnError' => true, 'targetClass' => Shift::className(), 'targetAttribute' => ['shift_id' => 'id']],
             [['barang_id'], 'exist', 'skipOnError' => true, 'targetClass' => SalesMasterBarang::className(), 'targetAttribute' => ['barang_id' => 'id_barang']],
@@ -59,9 +59,25 @@ class BbmDispenserLog extends \yii\db\ActiveRecord
             'perusahaan_id' => 'Perusahaan ID',
             'jumlah' => 'Jumlah',
             'tanggal' => 'Tanggal',
-            'created' => 'Created',
+            'created_at' => 'Created',
         ];
     }
+
+    public function getNamaDispenser()
+    {
+        return $this->dispenser->nama;
+    }
+
+    public function getNamaBarang()
+    {
+        return $this->barang->nama_barang;
+    }
+
+    public function getNamaShift()
+    {
+        return $this->shift->nama;
+    }
+
     public function getBarang()
     {
         return $this->hasOne(SalesMasterBarang::className(), ['id_barang' => 'barang_id']);
@@ -71,7 +87,7 @@ class BbmDispenserLog extends \yii\db\ActiveRecord
      */
     public function getDispenser()
     {
-        return $this->hasOne(BbmDispenser::className(), ['id' => 'dispenser_id']);
+        return $this->hasOne(Departemen::className(), ['id' => 'dispenser_id']);
     }
 
     /**

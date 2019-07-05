@@ -6,6 +6,7 @@ use Yii;
 use app\models\Jurnal;
 use app\models\JurnalSearch;
 use app\models\Perkiraan;
+use app\models\Transaksi;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -36,47 +37,53 @@ class JurnalController extends Controller
         
         $pendapatan = Perkiraan::find();
         $pendapatan->where([
-            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id,
-            'kode' => 4
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
         ]);
 
+        $pendapatan->andFilterWhere(['like','kode','4-%',false]);
+        $pendapatan->orderBy(['kode'=>SORT_ASC]);
         $beban = Perkiraan::find();
         $beban->where([
-            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id,
-            'kode' => 5
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
         ]);
+
+        $beban->andFilterWhere(['like','kode','5-%',false]);
+        $beban->orderBy(['kode'=>SORT_ASC]);
 
         $results = [];
         $params = Yii::$app->request->queryParams;
-        $pendapatan = $pendapatan->one();
+        $pendapatan = $pendapatan->all();
         
-        foreach($pendapatan->perkiraans as $q1 => $m1)
+        foreach($pendapatan as $q1 => $m1)
         {
-            foreach($m1->perkiraans as $q2 => $m2)
-            {
-                $params['Jurnal']['perkiraan_id'] = $m2->id;
-                $sumDebet = $searchModel->searchByTanggalAkun($params,'debet');
-                $sumKredit = $searchModel->searchByTanggalAkun($params,'kredit');
-                $results['pendapatan'][$m2->id] = [
-                    'debet' => $sumDebet,
-                    'kredit' => $sumKredit
-                ];
-            }
+            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
+            $jumlah = $query->sum('jumlah');
+
+            $params['Jurnal']['perkiraan_id'] = $m1->id;
+            $results['pendapatan'][$m1->id] = [
+                'kode' => $m1->kode,
+                'nama' => $m1->nama,
+                'jumlah' => $jumlah,
+            ];
         }
 
-        $beban = $beban->one();
-        foreach($beban->perkiraans as $q1 => $m1)
+        // print_r($results['pendapatan'][0]);exit;
+
+        $beban = $beban->all();
+        foreach($beban as $q1 => $m1)
         {
-            foreach($m1->perkiraans as $q2 => $m2)
-            {
-                $params['Jurnal']['perkiraan_id'] = $m2->id;
-                $sumDebet = $searchModel->searchByTanggalAkun($params,'debet');
-                $sumKredit = $searchModel->searchByTanggalAkun($params,'kredit');
-                $results['beban'][$m2->id] = [
-                    'debet' => $sumDebet,
-                    'kredit' => $sumKredit
-                ];
-            }
+            // foreach($m1->perkiraans as $q2 => $m2)
+            // {
+            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
+            $jumlah = $query->sum('jumlah');
+
+            $params['Jurnal']['perkiraan_id'] = $m1->id;
+            $results['beban'][$m1->id] = [
+                'kode' => $m1->kode,
+                'nama' => $m1->nama,
+                'jumlah' => $jumlah,
+            ];
+            // }
         }
         $model = new Jurnal;
         // print_r($results);exit;

@@ -39,6 +39,41 @@ class SalesStokGudangController extends Controller
         ];
     }
 
+    public function actionAjaxGetBarangByJenis()
+    {
+        
+
+        $q = $_GET['term'];
+        $jenis = $_GET['jenis'];
+        
+        
+        $list = SalesStokGudang::find();
+        $list->joinWith(['barang as barang']);
+        $list->where([
+            'barang.jenis_barang_id'=>$jenis,
+            'barang.id_perusahaan' => Yii::$app->user->identity->perusahaan_id
+        ]);
+
+        $list->andFilterWhere(['like', 'barang.nama_barang', $term]);
+        $list->limit(10);
+        $list = $list->all();
+
+        $result = [];
+        foreach($list as $item)
+        {   
+            $label = $item->barang->nama_barang.' | '.$item->barang->kode_barang.' | '.$item->exp_date.' | '.$item->batch_no;
+            $result[] = [
+                'id' => $item->id_barang,
+                'label' => $label,
+                'ed' => $item->exp_date,
+                'batch_no' => $item->batch_no
+            ];
+        }
+
+        echo \yii\helpers\Json::encode($result);
+
+    }
+
     public function actionInitStok(){
         $model = new SalesStokGudang();
         if ($model->load(Yii::$app->request->post()) && $model->save()) {

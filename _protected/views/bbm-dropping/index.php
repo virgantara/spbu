@@ -4,18 +4,18 @@ use yii\helpers\Html;
 use yii\grid\GridView;
 
 /* @var $this yii\web\View */
-/* @var $searchModel app\models\TransaksiSearch */
+/* @var $searchModel app\models\BbmDroppingSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'Transaksi';
+$this->title = 'Bbm Droppings';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="transaksi-index">
+<div class="bbm-dropping-index">
 
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Create Transaksi', ['create'], ['class' => 'btn btn-success']) ?>
+        <?= Html::a('Create Bbm Dropping', ['create'], ['class' => 'btn btn-success']) ?>
     </p>
 
     <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
@@ -25,15 +25,16 @@ $this->params['breadcrumbs'][] = $this->title;
         'filterModel' => $searchModel,
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
+
+            'id',
+            'bbm_faktur_id',
+            'no_lo',
             'tanggal',
-            'perkiraan.nama',
-            'no_bukti',
-            'keterangan',
-            
-            'jumlah',
+            'jam',
+            //'barang_id',
+            //'jumlah',
             //'created_at',
             //'updated_at',
-            //'perusahaan_id',
 
             ['class' => 'yii\grid\ActionColumn'],
         ],

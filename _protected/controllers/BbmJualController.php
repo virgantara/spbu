@@ -9,6 +9,10 @@ use app\models\SalesMasterBarang;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use app\models\Transaksi;
+use app\models\Perkiraan;
+use app\models\Jurnal;
+
 /**
  * BbmJualController implements the CRUD actions for BbmJual model.
  */
@@ -106,7 +110,7 @@ class BbmJualController extends Controller
         $searchModel = new BbmJualSearch();
         $dataProvider = null;
 
-        $listDispenser = [];
+        $listDispenser = \app\models\Departemen::getListDepartemens();
 
         $listData = [];
         $listShifts = [];
@@ -117,7 +121,13 @@ class BbmJualController extends Controller
         if(!empty($_POST['barang_id']))
         {
             
-            // $models = BbmJual::getListJualTanggal($_POST['bulan'], $_POST['tahun'],$_POST['barang_id']);
+            foreach($listDispenser as $q => $d)
+            {
+                $models = BbmJual::getListJualTanggal($_POST['bulan'], $_POST['tahun'],$_POST['barang_id'],$q);    
+                $results[$q] = $models;
+            }
+            
+            
             // foreach($models->getModels() as $item)
             // {
             //     $results[] = 
@@ -127,7 +137,7 @@ class BbmJualController extends Controller
             // $listJualTanggal = BbmJual::getListJualTanggal($_POST['bulan'], $_POST['tahun'],$_POST['barang_id']);
             
             $barang = SalesMasterBarang::find()->where(['id_barang'=>$_POST['barang_id']])->one();
-            $listDispenser = \app\models\BbmDispenser::getDataProviderDispensers($_POST['barang_id']);  
+              
             // for($i = 0;$i<31;$i++)
             // {
                 
@@ -193,10 +203,11 @@ class BbmJualController extends Controller
         return $this->render('index',[
             'dataProvider' => $dataProvider,
             'barang'=>$barang,
-            'listShifts' => $listShifts,
-            'listJualTanggal' => $listJualTanggal,
+            'results' => $results,
+            // 'listShifts' => $listShifts,
+            // 'listJualTanggal' => $listJualTanggal,
             'listDispenser' => $listDispenser,
-            'listData' => $listData
+            // 'listData' => $listData
         ]);
     }
 
@@ -221,52 +232,164 @@ class BbmJualController extends Controller
     public function actionCreate()
     {
         $model = new BbmJual();
+        $model->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
 
         $transaction = Yii::$app->db->beginTransaction();
 
         try {
             //if callback returns true than commit transaction
-            if ($model->load(Yii::$app->request->post()) && $model->save()) {
-                
-                $params = [
-                    'tanggal' => $model->tanggal,
-                    'barang_id' => $model->barang_id,
-                    'shift_id' => $model->shift_id,
-                    'dispenser_id' => $model->dispenser_id
-                ];
-                $searchModel = new BbmJualSearch();
-                $dataProvider = $searchModel->searchBy($params);
-                $stok_awal = !empty($dataProvider) ? $dataProvider->stok_awal : 0;
-                $stok_akhir = !empty($dataProvider) ? $dataProvider->stok_akhir : 0;
-                $saldo = $stok_akhir - $stok_awal;
-                $subtotal_liter = $saldo;
-                $harga = $dataProvider->harga;
+            if ($model->load(Yii::$app->request->post())) 
+            {
 
-                $kode_transaksi = $model->kode_transaksi;//$barang->id_barang.'-'.$tgl->id.'-'.$model->shift_id;
-                $userLevel = Yii::$app->user->identity->access_role;    
-                
-                $userPt = Yii::$app->user->identity->perusahaan_id;
-                $kas = \app\models\Kas::find()->where(['kode_transaksi'=>$model->kode_transaksi])->one();
-                if(empty($kas))
+                $model->qty = $model->stok_akhir - $model->stok_awal;
+                $model->save();
+
+                $query = \app\models\DepartemenStok::find()->where([
+                    'barang_id' => $model->barang_id,
+                    'departemen_id' => $model->dispenser_id
+                ]);
+
+                $ds = $query->one();
+
+
+                if(!empty($ds))
                 {
-                    $kas = new \app\models\Kas;    
+
+                    $ds->stok = $ds->stok - $model->qty;
+                    $ds->save();
+
+                    $bbmLog = new \app\models\BbmDispenserLog;
+                    $bbmLog->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+                    $bbmLog->barang_id = $model->barang_id;
+                    $bbmLog->shift_id = $model->shift_id;
+                    $bbmLog->dispenser_id = $model->dispenser_id;
+                    $bbmLog->tanggal = date('Y-m-d',strtotime($model->tanggal));
+                    $bbmLog->jumlah = $model->stok_akhir;
+                    $bbmLog->save();    
+                }
+                
+                $trx = new Transaksi();
+                $trx->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+
+                $akun_lawan = Perkiraan::find()->where([
+                    'kode' => '1-11',
+                    'perusahaan_id' => Yii::$app->user->identity->perusahaan_id
+                ]);
+
+                $akun_lawan = $akun_lawan->one();
+
+                if(!empty($akun_lawan))
+                {
+                    $perkiraan_lawan_id = $akun_lawan->id;
+                    $trx->perkiraan_id = $model->barang->perkiraan_jual_id;
+                    $trx->no_bukti = 'INV'.$model->id;
+                    $trx->keterangan = 'Jual '.$model->barang->nama_barang;
+                    $trx->tanggal = $model->tanggal;    
+                    $trx->jumlah = $model->qty * $model->barang->harga_jual;
+                    $trx->perkiraan_lawan_id = $perkiraan_lawan_id;
+                    if($trx->save())
+                    {
+                        $params = [
+                            'perkiraan_id' => $trx->perkiraan_id,
+                            'transaksi_id' => $trx->id,
+                            'no_bukti' => $trx->no_bukti,
+                            'jumlah' => $trx->jumlah,
+                            'keterangan' => $trx->keterangan,
+                            'keterangan_lawan' => 'Kas',
+                            'tanggal' => $model->tanggal
+                        ];
+
+
+                        $kodeAsal = $trx->perkiraan->kode;
+                        if(
+                            \app\helpers\MyHelper::startsWith($kodeAsal, '1') ||
+                            \app\helpers\MyHelper::startsWith($kodeAsal, '5')
+                        )
+                        {
+                            $jurnal = new Jurnal;
+                            $jurnal->perkiraan_id = $params['perkiraan_id'];
+                            $jurnal->debet = $params['jumlah'];
+                            $jurnal->transaksi_id = $params['transaksi_id'];
+                            $jurnal->no_bukti = $params['no_bukti'];
+                            $jurnal->keterangan = $params['keterangan'];
+                            $jurnal->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+                            $jurnal->tanggal = date('Y-m-d',strtotime($params['tanggal']));
+                            if(!$jurnal->save())
+                            {
+                                print_r($jurnal->getErrors());exit;
+                            }
+
+                            if(!empty($perkiraan_lawan_id))
+                            {
+                                $kodeLawan = $trx->perkiraanLawan->kode;
+                                
+                                $jurnal = new Jurnal;
+                                $jurnal->perkiraan_id = $trx->perkiraan_lawan_id;
+                                
+                                $jurnal->transaksi_id = $params['transaksi_id'];
+                                $jurnal->no_bukti = $params['no_bukti'];
+                                $jurnal->kredit = $params['jumlah'];
+                                $jurnal->keterangan = $params['keterangan_lawan'];
+                                $jurnal->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+                                $jurnal->tanggal = date('Y-m-d',strtotime($params['tanggal']));
+                                if(!$jurnal->save())
+                                {
+                                    print_r($jurnal->getErrors());exit;
+                                }
+
+                            }
+                        }
+
+                        else if(
+                            \app\helpers\MyHelper::startsWith($kodeAsal, '2') ||
+                            \app\helpers\MyHelper::startsWith($kodeAsal, '3') ||
+                            \app\helpers\MyHelper::startsWith($kodeAsal, '4')
+                        )
+                        {
+                            $jurnal = new Jurnal;
+                            $jurnal->perkiraan_id = $params['perkiraan_id'];
+                            $jurnal->debet = 0;
+                            $jurnal->transaksi_id = $params['transaksi_id'];
+                            $jurnal->no_bukti = $params['no_bukti'];
+                            $jurnal->kredit = $params['jumlah'];
+                            $jurnal->keterangan = $params['keterangan'];
+                            $jurnal->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+                            $jurnal->tanggal = date('Y-m-d',strtotime($params['tanggal']));
+                            if(!$jurnal->save())
+                            {
+                                echo 'Journal';
+                                print_r($jurnal->getErrors());exit;
+                            }
+
+                            if(!empty($perkiraan_lawan_id))
+                            {
+                                $kodeLawan = $trx->perkiraanLawan->kode;
+                                
+                                $jurnal = new Jurnal;
+                                $jurnal->perkiraan_id = $trx->perkiraan_lawan_id;
+                                $jurnal->debet = $params['jumlah'];
+                                $jurnal->transaksi_id = $params['transaksi_id'];
+                                $jurnal->no_bukti = $params['no_bukti'];
+                               
+                                $jurnal->keterangan = $params['keterangan_lawan'];
+                                $jurnal->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+                                $jurnal->tanggal = date('Y-m-d',strtotime($params['tanggal']));
+                                if(!$jurnal->save())
+                                {
+                                    echo 'Journal lawan';
+                                    print_r($jurnal->getErrors());exit;
+                                }
+
+                            }
+                        }
+                    }
+
+                    else{
+                        echo 'Trx Error';
+                        print_r($trx->getErrors());exit;
+                    }
                 }
 
-                $kas->kas_masuk = $subtotal_liter * $harga;
-                $kas->perkiraan_id = 90;
-                $kas->perusahaan_id = $userPt;
-                $kas->penanggung_jawab = Yii::$app->user->identity->username;
-                $uk = 'besar';
-                $kas->keterangan = 'Penjualan '.$model->barang->nama_barang.' '.Yii::$app->formatter->asDecimal($subtotal_liter).' '.$model->barang->id_satuan.' '.$model->shift->nama;
-                $kas->tanggal = $model->tanggal;
-                $kas->jenis_kas = 1; // kas masuk    
-                $kas->perusahaan_id = $userPt;
-                $kas->kas_besar_kecil = $uk;
-                $kas->kode_transaksi = $kode_transaksi;
-
-                $kas->save();
-                
-                // \app\models\Kas::updateSaldo($uk,$_POST['bulan'],$_POST['tahun']);
                 $transaction->commit();
                 Yii::$app->session->setFlash('success', "Data telah tersimpan");
                 // print_r($_POST);exit;
@@ -275,7 +398,10 @@ class BbmJualController extends Controller
                 else if(!empty($_POST['input-lagi']))
                     return $this->redirect(['create']);
             }    
-            
+            // else
+            // {
+            //     print_r($model->getErrors());exit;
+            // }
              
         } catch (\Exception $e) {
             $transaction->rollBack();
@@ -286,6 +412,7 @@ class BbmJualController extends Controller
         return $this->render('create', [
             'model' => $model,
         ]);
+            
     }
 
     /**

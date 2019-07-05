@@ -22,6 +22,9 @@ use Yii;
  */
 class BbmFaktur extends \yii\db\ActiveRecord
 {
+
+    const SCENARIO_DO = 'update_do';
+
     /**
      * {@inheritdoc}
      */
@@ -30,12 +33,21 @@ class BbmFaktur extends \yii\db\ActiveRecord
         return '{{%bbm_faktur}}';
     }
 
+    public function scenarios()
+    {
+        $scenarios = parent::scenarios();
+        $scenarios[self::SCENARIO_DO] = ['no_do', 'tanggal_do'];
+
+        return $scenarios;
+    }
+
     /**
      * {@inheritdoc}
      */
     public function rules()
     {
         return [
+            [['no_do','tanggal_do'],'required','on' => self::SCENARIO_DO],
             [['suplier_id', 'perusahaan_id','no_so','tanggal_so'], 'required'],
             [['suplier_id', 'perusahaan_id'], 'integer'],
             [['tanggal_so', 'created_at','updated_at','is_selesai','is_dropping'], 'safe'],
@@ -57,7 +69,8 @@ class BbmFaktur extends \yii\db\ActiveRecord
             'tanggal_so' => 'Tanggal SO',
             'perusahaan_id' => 'Perusahaan',
             'is_selesai' => 'Selesai',
-            
+            'no_do' => 'No LO',
+            'tanggal_do' => 'Tanggal LO',
             'created_at' => 'Created',
             'updated_at' => 'Updated'
         ];

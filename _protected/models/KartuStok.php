@@ -114,13 +114,58 @@ class KartuStok extends \yii\db\ActiveRecord
         if(!empty($m)){
         
             $m->barang_id = $params['barang_id'];
-            if($params['status'] == 1){
+            if($params['status'] == 1)
+            {
                 $m->qty_in = ceil($params['qty']);
-                
+                if(!empty($prevStok))
+                {
+
+                    if(count($prevStok) > 1)
+                    {
+                        $m->sisa_lalu = $prevStok[1]->sisa;
+                        $m->sisa = $prevStok[1]->sisa + $m->qty_in;
+                        $m->prev_id = $prevStok[1]->id;
+                    }
+
+                    else if (count($prevStok) == 1)
+                    {
+                        $m->sisa_lalu = $prevStok[0]->sisa;
+                        $m->sisa = $prevStok[0]->sisa + $m->qty_in;
+                        $m->prev_id = $prevStok[0]->id;
+                    }
+
+                }
+
+                else
+                {
+                    $m->sisa_lalu = 0;
+                    $m->sisa = $m->qty_in;
+                }
             }
             else{
                 $m->qty_out = ceil($params['qty']);
+                if(!empty($prevStok))
+                {
+                    if(count($prevStok) > 1)
+                    {
+                        $m->sisa_lalu = $prevStok[1]->sisa;
+                        $m->sisa = $prevStok[1]->sisa - $m->qty_out;
+                        $m->prev_id = $prevStok[1]->id;
+                    }
 
+                    else if (count($prevStok) == 1)
+                    {
+                        $m->sisa_lalu = $prevStok[0]->sisa;
+                        $m->sisa = $prevStok[0]->sisa - $m->qty_out;
+                        $m->prev_id = $prevStok[0]->id;
+                    } 
+                }
+
+                else
+                {
+                    $m->sisa_lalu = 0;
+                    $m->sisa = -$m->qty_out;
+                }
             }
 
             $m->kode_transaksi = !empty($params['kode_transaksi']) ? $params['kode_transaksi'] : '-';
@@ -129,11 +174,7 @@ class KartuStok extends \yii\db\ActiveRecord
             $m->stok_id = $params['stok_id'];
             $m->keterangan = $params['keterangan'];
 
-            if(count($prevStok) > 1)
-            {
-                $m->prev_id = $prevStok[1]->id;
-                $m->sisa_lalu = $prevStok[1]->sisa;
-            }
+            
 
             
             if($m->validate())
@@ -158,14 +199,62 @@ class KartuStok extends \yii\db\ActiveRecord
 
 
         $m->barang_id = $params['barang_id'];
-        if($params['status'] == 1){
+        $prevStok = KartuStok::getPrevStok($params);
+        if($params['status'] == 1)
+        {
             $m->qty_in = ceil($params['qty']);
-            
+            if(!empty($prevStok))
+            {
+
+                if(count($prevStok) > 1)
+                {
+                    $m->sisa_lalu = $prevStok[1]->sisa;
+                    $m->sisa = $prevStok[1]->sisa + $m->qty_in;
+                    $m->prev_id = $prevStok[1]->id;
+                }
+
+                else if (count($prevStok) == 1)
+                {
+                    $m->sisa_lalu = $prevStok[0]->sisa;
+                    $m->sisa = $prevStok[0]->sisa + $m->qty_in;
+                    $m->prev_id = $prevStok[0]->id;
+                }
+
+            }
+
+            else
+            {
+                $m->sisa_lalu = 0;
+                $m->sisa = $m->qty_in;
+            }
         }
         else{
             $m->qty_out = ceil($params['qty']);
-           
+            if(!empty($prevStok))
+            {
+                if(count($prevStok) > 1)
+                {
+                    $m->sisa_lalu = $prevStok[1]->sisa;
+                    $m->sisa = $prevStok[1]->sisa - $m->qty_out;
+                    $m->prev_id = $prevStok[1]->id;
+                }
+
+                else if (count($prevStok) == 1)
+                {
+                    $m->sisa_lalu = $prevStok[0]->sisa;
+                    $m->sisa = $prevStok[0]->sisa - $m->qty_out;
+                    $m->prev_id = $prevStok[0]->id;
+                } 
+            }
+
+            else
+            {
+                $m->sisa_lalu = 0;
+                $m->sisa = -$m->qty_out;
+            }
         }
+
+
 
         $m->kode_transaksi = !empty($params['kode_transaksi']) ? $params['kode_transaksi'] : '-';
         $m->tanggal = $params['tanggal'];

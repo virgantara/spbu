@@ -30,6 +30,31 @@ class DepartemenStokController extends Controller
         ];
     }
 
+    public function actionAjaxStokUnit()
+    {
+        if (Yii::$app->request->isPost) {
+
+            $dataItem = $_POST['dataItem'];
+
+            $query = DepartemenStok::find()->where([
+                'departemen_id' => $dataItem['dispenser_id'],
+                'barang_id' => $dataItem['barang_id'],
+            ]);
+
+            $hasil = $query->one();
+
+            $jumlah = !empty($hasil) ? $hasil->stok : 0;
+
+            $result = [
+                'code' => 200,
+                'message' => 'success',
+                'jumlah' => $jumlah
+            ];
+           
+            echo json_encode($result);
+        }
+    }
+
     public function actionAjaxDepartemenBarang() {
 
         if (Yii::$app->request->isAjax) {
@@ -202,8 +227,9 @@ class DepartemenStokController extends Controller
     public function actionCreate()
     {
         $model = new DepartemenStok();
-
+        $model->tanggal = date('Y-m-d');
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            Yii::$app->session->setFlash('success', "Data telah ditambahkan");
             return $this->redirect(['index']);
         }
 
@@ -224,6 +250,7 @@ class DepartemenStokController extends Controller
         $model = $this->findModel($id);
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            Yii::$app->session->setFlash('success', "Data telah diupdate");
             return $this->redirect(['index']);
         }
 

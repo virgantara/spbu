@@ -11,7 +11,6 @@ use kartik\date\DatePicker;
 /* @var $model app\models\BbmJual */
 /* @var $form yii\widgets\ActiveForm */
 
-use app\models\BbmDispenser;
 use app\models\SalesMasterBarang;
 use app\models\Shift;
 use app\models\Perusahaan;
@@ -30,17 +29,14 @@ $model->tanggal = $model->isNewRecord ? date('d-m-Y') : $model->tanggal;
 
 // print_r($model->tanggal);exit;
 
-$listData=Perusahaan::getListPerusahaans();
 
-$listDispenser = BbmDispenser::getListDispensers();
 ?>
 
 <div class="bbm-jual-form">
 
     <?php $form = ActiveForm::begin(); ?>
 
-    <?= $form->errorSummary($model) ?>
-    <?= $form->field($model, 'tanggal',['options'=>['class'=>'form-group col-xs-12 col-lg-6']])->widget(
+    <?= $form->field($model, 'tanggal',['options'=>['class'=>'form-group col-xs-12 col-lg-12']])->widget(
         DatePicker::className(),[
             // 'value' => date('d-M-Y'),
             'options' => ['placeholder' => 'Pilih tanggal transaksi ...'],
@@ -52,9 +48,9 @@ $listDispenser = BbmDispenser::getListDispensers();
     ) ?>
     
 
-    <?= $form->field($model, 'barang_id',['options'=>['class'=>'form-group col-xs-12 col-lg-6']])->dropDownList($listDataBarang, ['prompt'=>'.. Pilih BBM','id'=>'barang_id']); ?>
+    <?= $form->field($model, 'barang_id',['options'=>['class'=>'form-group col-xs-12 col-lg-12']])->dropDownList($listDataBarang, ['prompt'=>'.. Pilih BBM','id'=>'barang_id']); ?>
     <?php
-    echo $form->field($model, 'dispenser_id',['options'=>['class'=>'form-group col-xs-12 col-lg-6']])->widget(DepDrop::classname(), [
+    echo $form->field($model, 'dispenser_id',['options'=>['class'=>'form-group col-xs-12 col-lg-12']])->widget(DepDrop::classname(), [
         'options'=>['id'=>'dispenser_id'],
         'pluginOptions'=>[
             'depends'=>['barang_id'],
@@ -64,9 +60,9 @@ $listDispenser = BbmDispenser::getListDispensers();
     ]);
      ?>
 
-    <?= $form->field($model, 'shift_id',['options'=>['class'=>'form-group col-xs-12 col-lg-6']])->dropDownList($listDataShift, ['prompt'=>'.. Pilih Shift']); ?>
-    <?= $form->field($model, 'stok_awal',['options'=>['class'=>'form-group col-xs-12 col-lg-6']])->textInput() ?>
-    <?= $form->field($model, 'stok_akhir',['options'=>['class'=>'form-group col-xs-12 col-lg-6']])->textInput() ?>
+    <?= $form->field($model, 'shift_id',['options'=>['class'=>'form-group col-xs-12 col-lg-12']])->dropDownList($listDataShift, ['prompt'=>'.. Pilih Shift']); ?>
+    <?= $form->field($model, 'stok_awal',['options'=>['class'=>'form-group col-xs-12 col-lg-12']])->textInput() ?>
+    <?= $form->field($model, 'stok_akhir',['options'=>['class'=>'form-group col-xs-12 col-lg-12']])->textInput() ?>
     
     <!-- <label class="control-label">Durasi Jatuh Tempo</label> -->
     <?php 
@@ -77,7 +73,6 @@ $listDispenser = BbmDispenser::getListDispensers();
     // $form->field($model, 'no_nota')->textInput() 
     ?>
     
-    <?= $form->field($model, 'perusahaan_id',['options'=>['class'=>'form-group col-xs-12 col-lg-12']])->dropDownList($listData, ['prompt'=>'..Pilih Perusahaan..']);?>
     <div class="form-group">
         <?= Html::submitButton('Simpan', ['class' => 'btn btn-success','name'=>'input-saja','value'=>1]) ?>
         <?= Html::submitButton('Simpan & Input Lagi', ['class' => 'btn btn-success','name'=>'input-lagi','value'=>1]) ?>
@@ -96,7 +91,8 @@ jQuery(function($){
         
         item = new Object;
         item.barang_id = $('#barang_id').val();
-        item.dispenser_id = $('#dispenser_id').val();;
+        item.dispenser_id = $('#dispenser_id').val();
+        
         item.tanggal = $('#bbmjual-tanggal').val();
         
         if(item.barang_id == '' || item.dispenser_id == '' || item.tanggal == ''){
@@ -127,7 +123,7 @@ jQuery(function($){
         });
     });
 
-    
+        
 
 });
 ";

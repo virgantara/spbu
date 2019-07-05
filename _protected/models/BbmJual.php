@@ -89,7 +89,7 @@ class BbmJual extends \yii\db\ActiveRecord
             [['kode_transaksi'], 'autonumber', 'format'=>'TRJ.'.date('Y-m-d').'.?'],
             [['shift_id'], 'exist', 'skipOnError' => true, 'targetClass' => Shift::className(), 'targetAttribute' => ['shift_id' => 'id']],
             [['barang_id'], 'exist', 'skipOnError' => true, 'targetClass' => SalesMasterBarang::className(), 'targetAttribute' => ['barang_id' => 'id_barang']],
-            [['dispenser_id'], 'exist', 'skipOnError' => true, 'targetClass' => BbmDispenser::className(), 'targetAttribute' => ['dispenser_id' => 'id']],
+            [['dispenser_id'], 'exist', 'skipOnError' => true, 'targetClass' => Departemen::className(), 'targetAttribute' => ['dispenser_id' => 'id']],
             [['perusahaan_id'], 'exist', 'skipOnError' => true, 'targetClass' => Perusahaan::className(), 'targetAttribute' => ['perusahaan_id' => 'id_perusahaan']],
         ];
     }
@@ -114,6 +114,7 @@ class BbmJual extends \yii\db\ActiveRecord
             'stok_akhir' => 'Stok Akhir',
             'saldoBbm' => 'Saldo',
             'harga'=>'Harga',
+            'qty' => 'Qty',
             'kode_transaksi' => 'Kode Transaksi',
             // 'is_piutang' => 'Piutang',
             'no_nota' => 'Nota'
@@ -283,7 +284,7 @@ class BbmJual extends \yii\db\ActiveRecord
         return $dataProvider;
     }
 
-    public static function getListJualTanggal($bulan, $tahun, $barang_id)
+    public static function getListJualTanggal($bulan, $tahun, $barang_id, $dispenser_id)
     {
 
         $userPt = '';
@@ -303,17 +304,14 @@ class BbmJual extends \yii\db\ActiveRecord
         $ed = $y.'-'.$m.'-'.date('t');
         $where = array_merge($where,[self::tableName().'.barang_id' => $barang_id]);
         $query=BbmJual::find()->where($where);
-        
+        $query->andWhere(['dispenser_id' => $dispenser_id]);
         $query->andFilterWhere(['between', 'tanggal', $sd, $ed]);
         // $query->groupBy(['tanggal']);
         $query->orderBy(['tanggal'=>SORT_ASC]);
 
-        $dataProvider = new ActiveDataProvider([
-            'query' => $query,
-        ]);
         // $list=ArrayHelper::map($list,'shift_id','shift.nama');
 
-        return $dataProvider;
+        return $query->all();
     }
 
     public static function getListJualPerShift($tanggal, $barang_id, $shift_id)
@@ -400,7 +398,7 @@ class BbmJual extends \yii\db\ActiveRecord
      */
     public function getDispenser()
     {
-        return $this->hasOne(BbmDispenser::className(), ['id' => 'dispenser_id']);
+        return $this->hasOne(Departemen::className(), ['id' => 'dispenser_id']);
     }
 
     public function getNamaDispenser()

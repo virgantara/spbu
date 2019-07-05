@@ -31,7 +31,7 @@ if(!empty($export)){
     	</thead>
     	<tbody>
             <tr>
-                <td colspan="6"><strong>PENDAPATAN</strong></td>
+                <td colspan="6"><strong>PENJUALAN</strong></td>
             </tr>
     		<?php 
             $total = 0;
@@ -41,24 +41,26 @@ if(!empty($export)){
             $total_periode_berjalan_pendapatan = 0;
             $total_awal = 0;
             $total_akhir = 0;
-    		foreach($pendapatan->perkiraans as $q1 => $m1)
-    		{
-                foreach($m1->perkiraans as $q2 => $m2)
-                {
-                    $debet = $results['pendapatan'][$m2->id]['debet'];
-                    $kredit = $results['pendapatan'][$m2->id]['kredit'];
-                   $total_debet += $debet;
-                   $total_kredit += $kredit;
-                   $periode_berjalan = -1 * ($debet - $kredit);
-                   $total_periode_berjalan_pendapatan += $periode_berjalan;
-                   $awal = 0;
-                   $akhir = $awal + $periode_berjalan;
 
-                   $total_awal += $awal;
-                   $total_akhir += $akhir;
+    		foreach($pendapatan as $q1 => $m1)
+    		{
+
+                $data = $results['pendapatan'][$m1->id];
+                // foreach($m1->perkiraans as $q2 => $m2)
+                // {
+                    $kode = $data['kode'];
+                    $nama = $data['nama'];
+                    $jumlah = $data['jumlah'];
+                    $periode_berjalan = $jumlah;
+                    $total_periode_berjalan_pendapatan += $periode_berjalan;
+                    $awal = 0;
+                    $akhir = $awal + $periode_berjalan;
+
+                    $total_awal += $awal;
+$total_akhir += $akhir;
     		?>
     		<tr>
-                <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?=$m2->nama;?></td>
+                <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?=$nama;?></td>
     			<td  style="text-align: right"><?=\app\helpers\MyHelper::formatRupiah($awal,2);?></td>
                 <td  style="text-align: right"><?=\app\helpers\MyHelper::formatRupiah($periode_berjalan,2);?></td>
                 <td  style="text-align: right"><?=\app\helpers\MyHelper::formatRupiah($akhir,2);?></td>
@@ -68,7 +70,7 @@ if(!empty($export)){
             
 
             <?php
-                }
+                // }
     	    }
     		?>
             <tr>
@@ -90,15 +92,14 @@ if(!empty($export)){
             $total_periode_berjalan_beban = 0;
             $total_awal = 0;
             $total_akhir = 0;
-            foreach($beban->perkiraans as $q1 => $m1)
+            foreach($beban as $q1 => $m1)
             {
-                foreach($m1->perkiraans as $q2 => $m2)
-                {
-                    $debet = $results['beban'][$m2->id]['debet'];
-                    $kredit = $results['beban'][$m2->id]['kredit'];
-                   $total_debet += $debet;
-                   $total_kredit += $kredit;
-                   $periode_berjalan = ($debet - $kredit);
+                    $data = $results['beban'][$m1->id];
+                
+                   $kode = $data['kode'];
+                    $nama = $data['nama'];
+                    $jumlah = $data['jumlah'];
+                   $periode_berjalan = $jumlah;
                    $total_periode_berjalan_beban += $periode_berjalan;
                    $awal = 0;
                    $akhir = $awal + $periode_berjalan;
@@ -107,7 +108,7 @@ if(!empty($export)){
                    $total_akhir += $akhir;
             ?>
             <tr>
-                <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?=$m2->nama;?></td>
+                <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?=$nama;?></td>
                 <td  style="text-align: right"><?=\app\helpers\MyHelper::formatRupiah($awal,2);?></td>
                 <td  style="text-align: right"><?=\app\helpers\MyHelper::formatRupiah($periode_berjalan,2);?></td>
                 <td  style="text-align: right"><?=\app\helpers\MyHelper::formatRupiah($akhir,2);?></td>
@@ -118,7 +119,7 @@ if(!empty($export)){
             
 
             <?php
-                }
+                // }
             }
             ?>
             <tr>

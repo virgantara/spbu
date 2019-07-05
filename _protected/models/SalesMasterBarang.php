@@ -109,9 +109,19 @@ class SalesMasterBarang extends \yii\db\ActiveRecord
             return false;
 
 
+
         $kode = SalesMasterBarang::getLastKodeBarang($jenisBarang->kode);
-        $kode = substr($kode, -5);
-        $kode = $kode + 1;
+        if(!empty($kode))
+        {
+            $kode = substr($kode, -5);
+            $kode = $kode + 1;    
+        }
+
+        else
+        {
+            $kode = 1;
+        }
+        
         
         $this->kode_barang = $jenisBarang->kode.\app\helpers\MyHelper::appendZeros($kode,5);
 

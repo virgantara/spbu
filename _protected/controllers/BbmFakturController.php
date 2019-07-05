@@ -11,6 +11,8 @@ use yii\data\ActiveDataProvider;
 use app\models\BbmFaktur;
 use app\models\BbmFakturSearch;
 use app\models\BarangStok;
+use app\models\Departemen;
+use app\models\DepartemenStok;
 use yii\helpers\Json;
 
 /**
@@ -31,6 +33,75 @@ class BbmFakturController extends Controller
                 ],
             ],
         ];
+    }
+
+    public function actionUpdateDropping($id)
+    {
+        $model = $this->findModel($id);
+        $model->scenario = BbmFaktur::SCENARIO_DO;
+
+        if ($model->load(Yii::$app->request->post())) {
+            $model->tanggal_do = date('Y-m-d', strtotime($model->tanggal_do));
+            $transaction = \Yii::$app->db->beginTransaction();
+            try 
+            {
+                $model->save();
+
+                $listDepartemen = Departemen::find()->where(['perusahaan_id'=>Yii::$app->user->identity->perusahaan_id]);
+                foreach($listDepartemen->all() as $d)
+                {
+                    foreach($model->bbmFakturItems as $item)
+                    {
+                        $ds = DepartemenStok::find()->where([
+                            'barang_id' => $item->barang_id,
+                            'departemen_id' => $d->id
+                        ])->one();
+
+                        if(empty($ds)){
+                            $ds = new DepartemenStok;
+                            $ds->stok_akhir = 0;
+                            $ds->stok_minimal = 1000;
+                        }
+
+                        $ds->barang_id = $item->barang_id;
+                        $ds->departemen_id = $d->id;
+                        $ds->stok_awal = $item->jumlah;
+                        $ds->stok = $item->jumlah;
+                        $ds->tanggal = $model->tanggal_do;
+                        if(!$ds->save())
+                        {
+                            print_r($ds->getErrors());exit;
+                        }
+
+                    }
+                }
+
+                $transaction->commit();
+            } catch (\Exception $e) {
+                $transaction->rollBack();
+                throw $e;
+            } catch (\Throwable $e) {
+                $transaction->rollBack();
+                
+                throw $e;
+            }
+            return $this->redirect(['update-dropping', 'id' => $model->id]);
+        }
+
+        return $this->render('updateDropping', [
+            'model' => $model,
+        ]);
+    }
+
+    public function actionDropping()
+    {
+        $searchModel = new BbmFakturSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        return $this->render('dropping', [
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
+        ]);
     }
 
     public function actionAjaxSearch($term)

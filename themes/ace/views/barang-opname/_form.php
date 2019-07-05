@@ -7,7 +7,9 @@ $theme = $this->theme;
 /* @var $this yii\web\View */
 /* @var $model app\models\BarangOpname */
 /* @var $form yii\widgets\ActiveForm */
-$listDepartment = \yii\helpers\ArrayHelper::map(\app\models\Departemen::find()->where(['id'=>Yii::$app->user->identity->departemen])->all(),'id','nama');
+$listDepartment = \yii\helpers\ArrayHelper::map(\app\models\Departemen::find()->where(['perusahaan_id'=>Yii::$app->user->identity->perusahaan_id])->all(),'id','nama');
+
+$listJenis=\app\models\MasterJenisBarang::getList();
 
 $tanggal = !empty($_POST['tanggal']) ? $_POST['tanggal'] : date('Y-m-d');
 ?>
@@ -25,6 +27,13 @@ $tanggal = !empty($_POST['tanggal']) ? $_POST['tanggal'] : date('Y-m-d');
         <label class="col-sm-2 control-label no-padding-right" for="form-field-1"> Unit</label>
         <div class="col-sm-2">
           <?= Html::dropDownList('dept_id',!empty($_POST['dept_id']) ? $_POST['dept_id'] : $_POST['dept_id'],$listDepartment, ['prompt'=>'..Pilih Unit..','id'=>'dept_id']);?>
+
+        </div>
+    </div>
+     <div class="form-group">
+        <label class="col-sm-2 control-label no-padding-right" for="form-field-1"> Jenis Barang</label>
+        <div class="col-sm-2">
+          <?= Html::dropDownList('jenis_barang_id',$_POST['jenis_barang_id'] ?: '', $listJenis, ['prompt'=>'..Pilih Jenis Barang..','id'=>'jenis_barang_id']);?>
 
         </div>
     </div>
@@ -56,21 +65,11 @@ $tanggal = !empty($_POST['tanggal']) ? $_POST['tanggal'] : date('Y-m-d');
         ]
     ]); ?>
     <input type="hidden" name="simpan" value="1"/>
-    <div class="alert alert-success alert-dismissable" style="display: none" id="flash-message">
-         <button aria-hidden="true" data-dismiss="alert" class="close" type="button">×</button>
-         <i class="icon fa fa-check"></i>Data tersimpan
-         
-    </div>
-<div class="row">
-    <div class="col-xs-12">
-        
-        <button class="btn btn-success" id="btn-sync"><i class="fa fa-save"></i> Simpan</button>
-         <img id="loading" src="<?=$theme->getPath('images/loading.gif');?>" style="display: none" />
-    </div>
-</div>
+    
    <div class="form-group">
     <input type="hidden" name="tanggal_pilih" value="<?=!empty($_POST['tanggal']) ? $_POST['tanggal'] : date('Y-m-d');?>"/>
     <input type="hidden" name="dept_id_pilih" value="<?=!empty($_POST['dept_id']) ? $_POST['dept_id'] : 0;?>"/>
+    <input type="hidden" name="jenis_barang_id" value="<?=$_POST['jenis_barang_id'] ?: 0;?>"/>
     <table class="table table-bordered" id="tabel-opname">
         <thead>
             <tr>
@@ -109,7 +108,10 @@ $tanggal = !empty($_POST['tanggal']) ? $_POST['tanggal'] : date('Y-m-d');
                 <td><?=($m->barang->kode_barang);?></td>
                 <td><?=($m->barang->nama_barang);?></td>
                 <td><?=($m->barang->id_satuan);?></td>
-                <td><?=($m->stok);?></td>
+                <td><?=($m->stok);?>
+                    
+                    
+                </td>
                 <td><input value="<?=$tmp_riil;?>" type="number" style="width: 80px" data-barang_id="<?=$m->barang_id;?>" data-item="<?=$m->stok;?>" data-stok_id="<?=$m->id;?>" data-id="<?=($q+1);?>" class="stok_riil" name="stok_riil_<?=$m->id;?>"/></td>
                 <td><span class="selisih"><?=$selisih;?></span></td>
             </tr>
