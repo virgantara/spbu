@@ -39,7 +39,7 @@ class BbmDispenserLog extends \yii\db\ActiveRecord
             [['dispenser_id', 'shift_id', 'perusahaan_id'], 'integer'],
             [['jumlah'], 'number'],
             [['tanggal', 'created_at'], 'safe'],
-            [['dispenser_id'], 'exist', 'skipOnError' => true, 'targetClass' => Departemen::className(), 'targetAttribute' => ['dispenser_id' => 'id']],
+            [['dispenser_id'], 'exist', 'skipOnError' => true, 'targetClass' => BbmDispenser::className(), 'targetAttribute' => ['dispenser_id' => 'id']],
             [['perusahaan_id'], 'exist', 'skipOnError' => true, 'targetClass' => Perusahaan::className(), 'targetAttribute' => ['perusahaan_id' => 'id_perusahaan']],
             [['shift_id'], 'exist', 'skipOnError' => true, 'targetClass' => Shift::className(), 'targetAttribute' => ['shift_id' => 'id']],
             [['barang_id'], 'exist', 'skipOnError' => true, 'targetClass' => SalesMasterBarang::className(), 'targetAttribute' => ['barang_id' => 'id_barang']],
@@ -87,7 +87,7 @@ class BbmDispenserLog extends \yii\db\ActiveRecord
      */
     public function getDispenser()
     {
-        return $this->hasOne(Departemen::className(), ['id' => 'dispenser_id']);
+        return $this->hasOne(BbmDispenser::className(), ['id' => 'dispenser_id']);
     }
 
     /**

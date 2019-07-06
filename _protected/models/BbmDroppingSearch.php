@@ -11,6 +11,11 @@ use app\models\BbmDropping;
  */
 class BbmDroppingSearch extends BbmDropping
 {
+
+    public $namaBarang;
+    public $namaShift;
+    public $namaTangki;
+
     /**
      * {@inheritdoc}
      */
@@ -18,7 +23,7 @@ class BbmDroppingSearch extends BbmDropping
     {
         return [
             [['id', 'bbm_faktur_id', 'barang_id'], 'integer'],
-            [['no_lo', 'tanggal', 'jam', 'created_at', 'updated_at'], 'safe'],
+            [['no_lo', 'tanggal', 'jam', 'created_at', 'updated_at','namaBarang','namaShift','namaTangki'], 'safe'],
             [['jumlah'], 'number'],
         ];
     }
@@ -42,12 +47,27 @@ class BbmDroppingSearch extends BbmDropping
     public function search($params)
     {
         $query = BbmDropping::find();
-
+        $query->joinWith(['barang as b','shift as s','tangki as t']);
         // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
         ]);
+
+        $dataProvider->sort->attributes['namaBarang'] = [
+            'asc' => ['b.nama_barang'=>SORT_ASC],
+            'desc' => ['b.nama_barang'=>SORT_DESC]
+        ];
+
+        $dataProvider->sort->attributes['namaShift'] = [
+            'asc' => ['t.nama'=>SORT_ASC],
+            'desc' => ['t.nama'=>SORT_DESC]
+        ];
+
+        $dataProvider->sort->attributes['namaTangki'] = [
+            'asc' => ['t.nama'=>SORT_ASC],
+            'desc' => ['t.nama'=>SORT_DESC]
+        ];
 
         $this->load($params);
 

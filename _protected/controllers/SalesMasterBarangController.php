@@ -10,7 +10,7 @@ use yii\data\ActiveDataProvider;
 use app\models\BarangHarga;
 use app\models\SalesMasterBarang;
 use app\models\SalesMasterBarangSearch;
-use app\models\DepartemenStok;
+use app\models\BbmDispenser;
 use yii\helpers\Json;
 use yii\db\Query;
 /**
@@ -105,14 +105,14 @@ class SalesMasterBarangController extends Controller
 
     private function getDispenserList($id)
     {
-        $list = DepartemenStok::find()->where(['barang_id'=>$id])->all();
+        $list = BbmDispenser::find()->where(['barang_id'=>$id])->all();
 
         $result = [];
         foreach($list as $item)
         {
             $result[] = [
-                'id' => $item->departemen->id,
-                'name' => $item->departemen->nama
+                'id' => $item->id,
+                'name' => $item->nama
             ];
         }
 

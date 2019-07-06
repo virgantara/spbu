@@ -35,7 +35,7 @@ class BbmDispenser extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['nama', 'perusahaan_id', 'barang_id'], 'required'],
+            [['nama', 'perusahaan_id', 'barang_id','departemen_id'], 'required'],
             [['perusahaan_id', 'barang_id'], 'integer'],
             [['nama'], 'string', 'max' => 100],
              [['perusahaan_id'], 'exist', 'skipOnError' => true, 'targetClass' => Perusahaan::className(), 'targetAttribute' => ['perusahaan_id' => 'id_perusahaan']],
@@ -51,8 +51,9 @@ class BbmDispenser extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'nama' => 'Nama',
-            'perusahaan_id' => 'Perusahaan ID',
-            'barang_id' => 'Barang ID',
+            'perusahaan_id' => 'Perusahaan',
+            'barang_id' => 'Barang',
+            'departemen_id' => 'Tangki'
         ];
     }
 
@@ -111,6 +112,11 @@ class BbmDispenser extends \yii\db\ActiveRecord
     public function getPerusahaan() 
     { 
        return $this->hasOne(Perusahaan::className(), ['id_perusahaan' => 'perusahaan_id']); 
+    }
+
+    public function getDepartemen() 
+    { 
+       return $this->hasOne(Departemen::className(), ['id' => 'departemen_id']); 
     } 
 
     public function getNamaPerusahaan()

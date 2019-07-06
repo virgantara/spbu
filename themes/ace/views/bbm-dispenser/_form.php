@@ -18,6 +18,7 @@ if($userLevel != 'admin'){
 
 $listData=Perusahaan::getListPerusahaans();
 
+$listDataDept=\app\models\Departemen::getListDepartemens();
 
 
 $listDataBarang = SalesMasterBarang::getListBarangs();
@@ -30,7 +31,7 @@ $listDataBarang = SalesMasterBarang::getListBarangs();
     <?= $form->field($model, 'nama')->textInput(['maxlength' => true]) ?>
 
     <?= $form->field($model, 'perusahaan_id')->dropDownList($listData); ?>
-
+    <?= $form->field($model, 'departemen_id')->dropDownList($listDataDept, ['prompt'=>'..Pilih Tangki..']); ?>
     <?= $form->field($model, 'barang_id')->dropDownList($listDataBarang, ['prompt'=>'..Pilih Barang..']); ?>
 
     <div class="form-group">

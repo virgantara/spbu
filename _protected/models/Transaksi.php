@@ -95,4 +95,132 @@ class Transaksi extends \yii\db\ActiveRecord
     {
         return $this->hasOne(Perusahaan::className(), ['id_perusahaan' => 'perusahaan_id']);
     }
+
+    public static function insertTransaksi($pars)
+    {
+        $trx = new Transaksi();
+        $trx->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+
+        $akun_lawan = Perkiraan::find()->where([
+            'kode' => $pars['kode_akun_lawan'],
+            'perusahaan_id' => Yii::$app->user->identity->perusahaan_id
+        ]);
+
+        $akun_lawan = $akun_lawan->one();
+
+        if(!empty($akun_lawan))
+        {
+            $perkiraan_lawan_id = $akun_lawan->id;
+            $trx->perkiraan_id = $pars['perkiraan_id'];
+            $trx->no_bukti = $pars['no_bukti'];
+            $trx->keterangan = $pars['keterangan'];
+            $trx->tanggal = $pars['tanggal'];    
+            $trx->jumlah = $pars['jumlah'];//$model->qty * $model->barang->harga_jual;
+            $trx->perkiraan_lawan_id = $perkiraan_lawan_id;
+            if($trx->save())
+            {
+                $params = [
+                    'perkiraan_id' => $trx->perkiraan_id,
+                    'transaksi_id' => $trx->id,
+                    'no_bukti' => $trx->no_bukti,
+                    'jumlah' => $trx->jumlah,
+                    'keterangan' => $trx->keterangan,
+                    'keterangan_lawan' => $akun_lawan->nama,
+                    'tanggal' => $pars['tanggal']
+                ];
+
+
+                $kodeAsal = $trx->perkiraan->kode;
+                if(
+                    \app\helpers\MyHelper::startsWith($kodeAsal, '1') ||
+                    \app\helpers\MyHelper::startsWith($kodeAsal, '5') ||
+                    \app\helpers\MyHelper::startsWith($kodeAsal, '6') ||
+                    \app\helpers\MyHelper::startsWith($kodeAsal, '8')
+                )
+                {
+                    $jurnal = new Jurnal;
+                    $jurnal->perkiraan_id = $params['perkiraan_id'];
+                    $jurnal->debet = $params['jumlah'];
+                    $jurnal->transaksi_id = $params['transaksi_id'];
+                    $jurnal->no_bukti = $params['no_bukti'];
+                    $jurnal->keterangan = $params['keterangan'];
+                    $jurnal->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+                    $jurnal->tanggal = date('Y-m-d',strtotime($params['tanggal']));
+                    if(!$jurnal->save())
+                    {
+                        print_r($jurnal->getErrors());exit;
+                    }
+
+                    if(!empty($perkiraan_lawan_id))
+                    {
+                        $kodeLawan = $trx->perkiraanLawan->kode;
+                        
+                        $jurnal = new Jurnal;
+                        $jurnal->perkiraan_id = $trx->perkiraan_lawan_id;
+                        
+                        $jurnal->transaksi_id = $params['transaksi_id'];
+                        $jurnal->no_bukti = $params['no_bukti'];
+                        $jurnal->kredit = $params['jumlah'];
+                        $jurnal->keterangan = $params['keterangan_lawan'];
+                        $jurnal->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+                        $jurnal->tanggal = date('Y-m-d',strtotime($params['tanggal']));
+                        if(!$jurnal->save())
+                        {
+                            print_r($jurnal->getErrors());exit;
+                        }
+
+                    }
+                }
+
+                else if(
+                    \app\helpers\MyHelper::startsWith($kodeAsal, '2') ||
+                    \app\helpers\MyHelper::startsWith($kodeAsal, '3') ||
+                    \app\helpers\MyHelper::startsWith($kodeAsal, '4') ||
+                    \app\helpers\MyHelper::startsWith($kodeAsal, '7')
+                )
+                {
+                    $jurnal = new Jurnal;
+                    $jurnal->perkiraan_id = $params['perkiraan_id'];
+                    $jurnal->debet = 0;
+                    $jurnal->transaksi_id = $params['transaksi_id'];
+                    $jurnal->no_bukti = $params['no_bukti'];
+                    $jurnal->kredit = $params['jumlah'];
+                    $jurnal->keterangan = $params['keterangan'];
+                    $jurnal->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+                    $jurnal->tanggal = date('Y-m-d',strtotime($params['tanggal']));
+                    if(!$jurnal->save())
+                    {
+                        echo 'Journal';
+                        print_r($jurnal->getErrors());exit;
+                    }
+
+                    if(!empty($perkiraan_lawan_id))
+                    {
+                        $kodeLawan = $trx->perkiraanLawan->kode;
+                        
+                        $jurnal = new Jurnal;
+                        $jurnal->perkiraan_id = $trx->perkiraan_lawan_id;
+                        $jurnal->debet = $params['jumlah'];
+                        $jurnal->transaksi_id = $params['transaksi_id'];
+                        $jurnal->no_bukti = $params['no_bukti'];
+                       
+                        $jurnal->keterangan = $params['keterangan_lawan'];
+                        $jurnal->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+                        $jurnal->tanggal = date('Y-m-d',strtotime($params['tanggal']));
+                        if(!$jurnal->save())
+                        {
+                            echo 'Journal lawan';
+                            print_r($jurnal->getErrors());exit;
+                        }
+
+                    }
+                }
+            }
+
+            else{
+                echo 'Trx Error';
+                print_r($trx->getErrors());exit;
+            }
+        }
+    }
 }

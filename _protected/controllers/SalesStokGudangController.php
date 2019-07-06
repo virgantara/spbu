@@ -54,14 +54,15 @@ class SalesStokGudangController extends Controller
             'barang.id_perusahaan' => Yii::$app->user->identity->perusahaan_id
         ]);
 
-        $list->andFilterWhere(['like', 'barang.nama_barang', $term]);
+        $list->andFilterWhere(['like', 'barang.nama_barang', $q]);
+
         $list->limit(10);
         $list = $list->all();
 
         $result = [];
         foreach($list as $item)
         {   
-            $label = $item->barang->nama_barang.' | '.$item->barang->kode_barang.' | '.$item->exp_date.' | '.$item->batch_no;
+            $label = $item->barang->nama_barang.' | '.$item->barang->kode_barang;
             $result[] = [
                 'id' => $item->id_barang,
                 'label' => $label,

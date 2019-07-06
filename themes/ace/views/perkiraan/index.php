@@ -73,7 +73,20 @@ $this->params['breadcrumbs'][] = $this->title;
                             <?=$m4->kode?>  <?=$m4->nama?></td>
                         <td><?=\yii\helpers\Html::a('Update',\yii\helpers\Url::to(['perkiraan/update','id'=>$m4->id]));?></td>
                     </tr>
+                     <?php
+                        foreach($m4->perkiraans as $m5)
+                        {
+
+
+                    ?>
+                    <tr>
+                        <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+
+                            <?=$m5->kode?>  <?=$m5->nama?></td>
+                        <td><?=\yii\helpers\Html::a('Update',\yii\helpers\Url::to(['perkiraan/update','id'=>$m5->id]));?></td>
+                    </tr>
                     <?php
+                            }
                         }
                     }
                 }

@@ -42,6 +42,15 @@ class JurnalController extends Controller
 
         $pendapatan->andFilterWhere(['like','kode','4-%',false]);
         $pendapatan->orderBy(['kode'=>SORT_ASC]);
+
+        $pembelian = Perkiraan::find();
+        $pembelian->where([
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
+        ]);
+
+        $pembelian->andFilterWhere(['like','kode','5-1%',false]);
+        $pembelian->orderBy(['kode'=>SORT_ASC]);
+
         $beban = Perkiraan::find();
         $beban->where([
             'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
@@ -61,6 +70,65 @@ class JurnalController extends Controller
 
             $params['Jurnal']['perkiraan_id'] = $m1->id;
             $results['pendapatan'][$m1->id] = [
+                'kode' => $m1->kode,
+                'nama' => $m1->nama,
+                'jumlah' => $jumlah,
+            ];
+        }
+
+
+        $persediaan_awal = Perkiraan::find();
+        $persediaan_awal->where([
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
+        ]);
+
+        $persediaan_awal->andFilterWhere(['like','kode','1-13%',false]);
+        $persediaan_awal->orderBy(['kode'=>SORT_ASC]);
+
+        $persediaan_awal = $persediaan_awal->all();
+        foreach($persediaan_awal as $q1 => $m1)
+        {
+            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
+            $jumlah = $query->sum('jumlah');
+
+            $params['Jurnal']['perkiraan_id'] = $m1->id;
+            $results['persediaan_awal'][$m1->id] = [
+                'kode' => $m1->kode,
+                'nama' => $m1->nama,
+                'jumlah' => $jumlah,
+            ];
+        }
+
+        $persediaan_akhir = Perkiraan::find();
+        $persediaan_akhir->where([
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
+        ]);
+
+        $persediaan_akhir->andFilterWhere(['like','kode','1-13%',false]);
+        $persediaan_akhir->orderBy(['kode'=>SORT_ASC]);
+
+        $persediaan_akhir = $persediaan_akhir->all();
+        foreach($persediaan_akhir as $q1 => $m1)
+        {
+            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
+            $jumlah = $query->sum('jumlah');
+
+            $params['Jurnal']['perkiraan_id'] = $m1->id;
+            $results['persediaan_akhir'][$m1->id] = [
+                'kode' => $m1->kode,
+                'nama' => $m1->nama,
+                'jumlah' => $jumlah,
+            ];
+        }
+
+        $pembelian = $pembelian->all();
+        foreach($pembelian as $q1 => $m1)
+        {
+            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
+            $jumlah = $query->sum('jumlah');
+
+            $params['Jurnal']['perkiraan_id'] = $m1->id;
+            $results['pembelian'][$m1->id] = [
                 'kode' => $m1->kode,
                 'nama' => $m1->nama,
                 'jumlah' => $jumlah,
@@ -92,6 +160,8 @@ class JurnalController extends Controller
             'model' => $model,
             'dataProvider' => $dataProvider,
             'pendapatan' => $pendapatan,
+            'persediaan_awal' => $persediaan_awal,
+            'pembelian' => $pembelian,
             'beban' => $beban,
             'results'=>$results
         ]);

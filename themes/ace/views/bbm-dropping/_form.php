@@ -6,12 +6,12 @@ use kartik\time\TimePicker;
 use kartik\date\DatePicker;
 use app\models\SalesMasterBarang;
 use app\models\Shift;
-use app\models\SalesGudang;
+use app\models\Departemen;
 use app\models\Perusahaan;
 
 $listDataBarang=SalesMasterBarang::getListBarangs();
 $listDataShift=Shift::getListShifts();
-$listDataGudang=SalesGudang::getListGudangs();
+$listDataUnit=Departemen::getListDepartemens();
 
 /* @var $this yii\web\View */
 /* @var $model app\models\BbmDropping */
@@ -34,7 +34,7 @@ $listDataGudang=SalesGudang::getListGudangs();
             <div class="profile-info-name"> Tangki </div>
 
             <div class="profile-info-value">
-               <?= $form->field($model, 'gudang_id')->dropDownList($listDataGudang, ['prompt'=>'.. Pilih Tangki'])->label(false); ?>
+               <?= $form->field($model, 'departemen_id')->dropDownList($listDataUnit, ['prompt'=>'.. Pilih Tangki'])->label(false); ?>
             </div>
         </div>
         

@@ -6,6 +6,7 @@ use Yii;
 use app\models\BbmDropping;
 use app\models\BbmFaktur;
 use app\models\BbmFakturItem;
+use app\models\DepartemenStok;
 use app\models\BbmDroppingSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
@@ -72,18 +73,76 @@ class BbmDroppingController extends Controller
         $bbmFaktur = BbmFaktur::findOne($id);
         
         $model->bbm_faktur_id = $id;
+        $transaction = \Yii::$app->db->beginTransaction();
+        try 
+        {
+            if ($model->load(Yii::$app->request->post()) && $model->save()) 
+            {
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            $sumSo = BbmFakturItem::find()->where(['faktur_id'=>$id]);
-            $sumSo = $sumSo->sum('jumlah');
-            $sumLo = BbmDropping::find()->where(['bbm_faktur_id'=>$id]);
-            $sumLo = $sumLo->sum('jumlah');
-            $bbmFaktur->is_dropping = $sumLo >= $sumSo;
-            $bbmFaktur->save();
-            Yii::$app->session->setFlash('success', "Data telah tersimpan");
-            return $this->redirect(['index', 'id' => $model->bbm_faktur_id]);
+                $sumSo = BbmFakturItem::find()->where(['faktur_id'=>$id]);
+                $sumSo = $sumSo->sum('jumlah');
+                $sumLo = BbmDropping::find()->where(['bbm_faktur_id'=>$id]);
+                $sumLo = $sumLo->sum('jumlah');
+                $bbmFaktur->is_dropping = $sumLo >= $sumSo;
+                $bbmFaktur->save();
+
+                $stokUnit = DepartemenStok::find()->where([
+                    'barang_id' => $model->barang_id,
+                    'departemen_id' => $model->departemen_id
+                ]);
+
+                $stokUnit = $stokUnit->one();
+
+                if(!empty($stokUnit))
+                {
+                    $stokUnit->stok_bulan_lalu = $stokUnit->stok;
+                    $stokUnit->stok = $model->jumlah;
+                    $stokUnit->hb = $model->barang->harga_beli;
+                    $stokUnit->hj = $model->barang->harga_jual;
+
+                }
+
+                else{
+                    $stokUnit = new DepartemenStok;
+                    $stokUnit->stok_minimal = 100;
+                    $stokUnit->hb = $model->barang->harga_beli;
+                    $stokUnit->hj = $model->barang->harga_jual;
+                    $stokUnit->stok_bulan_lalu = 0;
+                    $stokUnit->stok = $model->jumlah;
+                    $stokUnit->barang_id = $model->barang_id;
+                    $stokUnit->departemen_id = $model->departemen_id;
+                }
+                $stokUnit->tanggal = $model->tanggal;
+
+                $pars = [
+                    'kode_akun_lawan' => '1-1101',
+                    'perkiraan_id' => $model->barang->perkiraan_beli_id,
+                    'no_bukti' => $model->no_lo,
+                    'keterangan' => 'Beli '.$model->barang->nama_barang,
+                    'tanggal' => $model->tanggal,
+                    'jumlah' => $stokUnit->stok * $model->barang->harga_beli
+                ];
+
+                \app\models\Transaksi::insertTransaksi($pars);
+
+                if(!$stokUnit->save()){
+                    print_r($stokUnit->getErrors());exit;
+                }
+
+                $transaction->commit();
+                Yii::$app->session->setFlash('success', "Data telah tersimpan");
+                return $this->redirect(['index', 'id' => $model->bbm_faktur_id]);
+            }
+            
+
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            throw $e;
+        } catch (\Throwable $e) {
+            $transaction->rollBack();
+            
+            throw $e;
         }
-
         return $this->render('create', [
             'model' => $model,
             'bbmFaktur' => $bbmFaktur
@@ -132,10 +191,9 @@ class BbmDroppingController extends Controller
     {
         $model = $this->findModel($id);
 
-        $faktur_id = $model;
         $model->delete();
 
-        return $this->redirect(['index','id'=>$faktur_id]);
+        return $this->redirect(['bbm-faktur/dropping']);
     }
 
     /**

@@ -89,7 +89,7 @@ class BbmJual extends \yii\db\ActiveRecord
             [['kode_transaksi'], 'autonumber', 'format'=>'TRJ.'.date('Y-m-d').'.?'],
             [['shift_id'], 'exist', 'skipOnError' => true, 'targetClass' => Shift::className(), 'targetAttribute' => ['shift_id' => 'id']],
             [['barang_id'], 'exist', 'skipOnError' => true, 'targetClass' => SalesMasterBarang::className(), 'targetAttribute' => ['barang_id' => 'id_barang']],
-            [['dispenser_id'], 'exist', 'skipOnError' => true, 'targetClass' => Departemen::className(), 'targetAttribute' => ['dispenser_id' => 'id']],
+            [['dispenser_id'], 'exist', 'skipOnError' => true, 'targetClass' => BbmDispenser::className(), 'targetAttribute' => ['dispenser_id' => 'id']],
             [['perusahaan_id'], 'exist', 'skipOnError' => true, 'targetClass' => Perusahaan::className(), 'targetAttribute' => ['perusahaan_id' => 'id_perusahaan']],
         ];
     }
@@ -398,7 +398,7 @@ class BbmJual extends \yii\db\ActiveRecord
      */
     public function getDispenser()
     {
-        return $this->hasOne(Departemen::className(), ['id' => 'dispenser_id']);
+        return $this->hasOne(BbmDispenser::className(), ['id' => 'dispenser_id']);
     }
 
     public function getNamaDispenser()
