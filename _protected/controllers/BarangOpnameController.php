@@ -189,16 +189,16 @@ class BarangOpnameController extends Controller
                     {
 
                         $model->save();
-                        $pars = [
-                            'kode_akun_lawan' => '1-1102',
-                            'perkiraan_id' => $m->barang->akun_persediaan_id,
-                            'no_bukti' => 'OPNAME_'.$model->id,
-                            'keterangan' => 'Stok Opname '.$m->barang->nama_barang,
-                            'tanggal' => $model->tanggal,
-                            'jumlah' => $model->stok * $model->barang->harga_beli
-                        ];
+                        // $pars = [
+                        //     'kode_akun_lawan' => '1-1102',
+                        //     'perkiraan_id' => $m->barang->akun_persediaan_id,
+                        //     'no_bukti' => 'OPNAME_'.$model->id,
+                        //     'keterangan' => 'Stok Opname '.$m->barang->nama_barang,
+                        //     'tanggal' => $model->tanggal,
+                        //     'jumlah' => $model->stok * $model->barang->harga_beli
+                        // ];
 
-                        Transaksi::insertTransaksi($pars);
+                        // Transaksi::insertTransaksi($pars);
                         $params = [
                             'barang_id' => $m->barang_id,
                             'status' => 1,

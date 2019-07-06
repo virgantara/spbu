@@ -7,6 +7,11 @@ use app\models\Jurnal;
 use app\models\JurnalSearch;
 use app\models\Perkiraan;
 use app\models\Transaksi;
+use app\models\KartuStok;
+use app\models\BbmDropping;
+use app\models\DepartemenStok;
+
+
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -34,7 +39,13 @@ class JurnalController extends Controller
     public function actionLabaRugi()
     {
         $searchModel = new JurnalSearch();
-        
+
+        $model = new Jurnal;
+        $tanggal_awal = !empty($_GET['Jurnal']['tanggal_awal']) ? date('Y-m-d',strtotime($_GET['Jurnal']['tanggal_awal'])) : date('Y-m-01');
+        $tanggal_akhir = !empty($_GET['Jurnal']['tanggal_akhir']) ? date('Y-m-d',strtotime($_GET['Jurnal']['tanggal_akhir'])) : date('Y-m-d');
+        $model->tanggal_awal = $tanggal_awal;
+        $model->tanggal_akhir = $tanggal_akhir;
+        // print_r($model->attributes);exit;
         $pendapatan = Perkiraan::find();
         $pendapatan->where([
             'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
@@ -42,14 +53,6 @@ class JurnalController extends Controller
 
         $pendapatan->andFilterWhere(['like','kode','4-%',false]);
         $pendapatan->orderBy(['kode'=>SORT_ASC]);
-
-        $pembelian = Perkiraan::find();
-        $pembelian->where([
-            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
-        ]);
-
-        $pembelian->andFilterWhere(['like','kode','5-1%',false]);
-        $pembelian->orderBy(['kode'=>SORT_ASC]);
 
         $beban = Perkiraan::find();
         $beban->where([
@@ -77,63 +80,34 @@ class JurnalController extends Controller
         }
 
 
-        $persediaan_awal = Perkiraan::find();
+        $persediaan_awal = KartuStok::find();
+        $persediaan_awal->joinWith(['barang as b']);
         $persediaan_awal->where([
-            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
+            'b.id_perusahaan'=>Yii::$app->user->identity->perusahaan_id
         ]);
 
-        $persediaan_awal->andFilterWhere(['like','kode','1-13%',false]);
-        $persediaan_awal->orderBy(['kode'=>SORT_ASC]);
+        $persediaan_awal->andWhere(['tanggal'=>$model->tanggal_awal]);
+        // $persediaan_awal->orderBy(['kode'=>SORT_ASC]);
 
         $persediaan_awal = $persediaan_awal->all();
-        foreach($persediaan_awal as $q1 => $m1)
-        {
-            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
-            $jumlah = $query->sum('jumlah');
-
-            $params['Jurnal']['perkiraan_id'] = $m1->id;
-            $results['persediaan_awal'][$m1->id] = [
-                'kode' => $m1->kode,
-                'nama' => $m1->nama,
-                'jumlah' => $jumlah,
-            ];
-        }
-
-        $persediaan_akhir = Perkiraan::find();
-        $persediaan_akhir->where([
-            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
+        
+        $pembelian = BbmDropping::find();
+        $pembelian->joinWith(['barang as b']);
+        $pembelian->where([
+            'b.id_perusahaan'=>Yii::$app->user->identity->perusahaan_id
         ]);
 
-        $persediaan_akhir->andFilterWhere(['like','kode','1-13%',false]);
-        $persediaan_akhir->orderBy(['kode'=>SORT_ASC]);
-
-        $persediaan_akhir = $persediaan_akhir->all();
-        foreach($persediaan_akhir as $q1 => $m1)
-        {
-            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
-            $jumlah = $query->sum('jumlah');
-
-            $params['Jurnal']['perkiraan_id'] = $m1->id;
-            $results['persediaan_akhir'][$m1->id] = [
-                'kode' => $m1->kode,
-                'nama' => $m1->nama,
-                'jumlah' => $jumlah,
-            ];
-        }
-
+        $pembelian->andWhere(['between','tanggal',$tanggal_awal,$tanggal_akhir]);
         $pembelian = $pembelian->all();
-        foreach($pembelian as $q1 => $m1)
-        {
-            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
-            $jumlah = $query->sum('jumlah');
-
-            $params['Jurnal']['perkiraan_id'] = $m1->id;
-            $results['pembelian'][$m1->id] = [
-                'kode' => $m1->kode,
-                'nama' => $m1->nama,
-                'jumlah' => $jumlah,
-            ];
-        }
+        // print_r($_GET);exit;
+        $persediaan_akhir = KartuStok::find();
+        $persediaan_akhir->joinWith(['barang as b']);
+        $persediaan_akhir->where([
+            'b.id_perusahaan'=>Yii::$app->user->identity->perusahaan_id
+        ]);
+        $persediaan_akhir->andFilterWhere(['like','kode_transaksi','JUAL_%',false]);
+        $persediaan_akhir->andWhere(['between','tanggal',$tanggal_awal,$tanggal_akhir]);
+        $persediaan_akhir = $persediaan_akhir->all();
 
         // print_r($results['pendapatan'][0]);exit;
 
@@ -153,7 +127,7 @@ class JurnalController extends Controller
             ];
             // }
         }
-        $model = new Jurnal;
+        
         // print_r($results);exit;
         return $this->render('lb', [
             'searchModel' => $searchModel,
@@ -161,6 +135,7 @@ class JurnalController extends Controller
             'dataProvider' => $dataProvider,
             'pendapatan' => $pendapatan,
             'persediaan_awal' => $persediaan_awal,
+            'persediaan_akhir' => $persediaan_akhir,
             'pembelian' => $pembelian,
             'beban' => $beban,
             'results'=>$results

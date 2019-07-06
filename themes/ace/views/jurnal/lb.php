@@ -69,6 +69,7 @@ $model->tanggal_akhir = !empty($_GET['Jurnal']['tanggal_akhir']) ? $_GET['Jurnal
             'results' => $results,
             'pendapatan' => $pendapatan,
             'persediaan_awal' => $persediaan_awal,
+            'persediaan_akhir' => $persediaan_akhir,
             'pembelian' => $pembelian,
             'beban' => $beban,
         ]); 

@@ -111,7 +111,10 @@ class BbmDroppingController extends Controller
                     $stokUnit->stok = $model->jumlah;
                     $stokUnit->barang_id = $model->barang_id;
                     $stokUnit->departemen_id = $model->departemen_id;
+
+                    
                 }
+
                 $stokUnit->tanggal = $model->tanggal;
 
                 $pars = [
@@ -126,7 +129,29 @@ class BbmDroppingController extends Controller
                 \app\models\Transaksi::insertTransaksi($pars);
 
                 if(!$stokUnit->save()){
+
                     print_r($stokUnit->getErrors());exit;
+                }
+                else{
+                    
+                    $params = [
+                        'barang_id' => $stokUnit->barang_id,
+                        'kode_transaksi' => 'DROPPING_'.$stokUnit->id,
+                        'status' => 1,
+                        'qty' => $stokUnit->stok,
+                        'tanggal' => $model->tanggal,
+                        'departemen_id' => $stokUnit->departemen_id,
+                        'stok_id' => $stokUnit->id,
+                        'keterangan' => 'DROPPING '.$stokUnit->barang->nama_barang.' Qty: '.$model->jumlah,
+                    ];
+
+                    $ks = \app\models\KartuStok::find()->where(['kode_transaksi'=>$params['kode_transaksi']])->one();
+
+                    if(empty($ks))
+                        \app\models\KartuStok::createKartuStok($params);
+                    else
+                        \app\models\KartuStok::updateKartuStok($params);
+
                 }
 
                 $transaction->commit();

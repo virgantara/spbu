@@ -213,6 +213,24 @@ class BbmJualController extends Controller
                 ];
 
                 Transaksi::insertTransaksi($pars);
+
+                $params = [
+                    'barang_id' => $model->barang_id,
+                    'kode_transaksi' => 'JUAL_'.$model->id,
+                    'status' => 0,
+                    'qty' => $model->qty,
+                    'tanggal' => $model->tanggal,
+                    'departemen_id' => $model->dispenser->departemen->id,
+                    'stok_id' => $model->id,
+                    'keterangan' => 'JUAL '.$model->barang->nama_barang.' Qty: '.$model->qty,
+                ];
+
+                $ks = \app\models\KartuStok::find()->where(['kode_transaksi'=>$params['kode_transaksi']])->one();
+
+                if(empty($ks))
+                    \app\models\KartuStok::createKartuStok($params);
+                else
+                    \app\models\KartuStok::updateKartuStok($params);
                 
                 $transaction->commit();
                 Yii::$app->session->setFlash('success', "Data telah tersimpan");
