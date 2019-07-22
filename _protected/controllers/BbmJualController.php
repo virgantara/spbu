@@ -13,7 +13,8 @@ use yii\filters\VerbFilter;
 use app\models\Transaksi;
 use app\models\Perkiraan;
 use app\models\Jurnal;
-
+use app\models\DepartemenStok;
+use app\models\KartuStok;
 /**
  * BbmJualController implements the CRUD actions for BbmJual model.
  */
@@ -32,6 +33,166 @@ class BbmJualController extends Controller
                 ],
             ],
         ];
+    }
+
+    public function actionTera()
+    {
+        $model = new BbmJual();
+        $model->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+
+        $transaction = Yii::$app->db->beginTransaction();
+
+        try {
+            //if callback returns true than commit transaction
+            if ($model->load(Yii::$app->request->post())) 
+            {
+                $model->harga = 0;
+                $model->qty = $model->stok_akhir - $model->stok_awal;
+                $model->save();
+                $query = DepartemenStok::find()->where([
+                    'barang_id' => $model->barang_id,
+                    'departemen_id' => $model->dispenser->departemen_id
+                ]);
+
+                $ds = $query->one();
+
+                if(!empty($ds))
+                {
+
+                    $ds->stok = $ds->stok - $model->qty;
+                    $ds->save();
+
+                    $bbmLog = new \app\models\BbmDispenserLog;
+                    $bbmLog->perusahaan_id = Yii::$app->user->identity->perusahaan_id;
+                    $bbmLog->barang_id = $model->barang_id;
+                    $bbmLog->shift_id = $model->shift_id;
+                    $bbmLog->dispenser_id = $model->dispenser_id;
+                    $bbmLog->tanggal = date('Y-m-d',strtotime($model->tanggal));
+                    $bbmLog->jumlah = $model->stok_akhir;
+                    $bbmLog->save();    
+
+                }
+
+                $pars = [
+                    'kode_akun_lawan' => '1-1102',
+                    'perkiraan_id' => $model->barang->perkiraan_jual_id,
+                    'no_bukti' => 'TERA_'.$model->id,
+                    'keterangan' => 'Tera '.$model->barang->nama_barang,
+                    'tanggal' => $model->tanggal,
+                    'jumlah' => $model->qty * $model->barang->harga_jual
+                ];
+
+                Transaksi::insertTransaksi($pars);
+
+                $params = [
+                    'barang_id' => $model->barang_id,
+                    'kode_transaksi' => 'TERA_'.$model->id,
+                    'status' => 0,
+                    'qty' => $model->qty,
+                    'tanggal' => $model->tanggal,
+                    'departemen_id' => $model->dispenser->departemen->id,
+                    'stok_id' => $model->id,
+                    'keterangan' => 'TERA '.$model->barang->nama_barang.' Qty: '.$model->qty,
+                ];
+
+                $ks = \app\models\KartuStok::find()->where(['kode_transaksi'=>$params['kode_transaksi']])->one();
+
+                if(empty($ks))
+                    \app\models\KartuStok::createKartuStok($params);
+                else
+                    \app\models\KartuStok::updateKartuStok($params);
+                
+
+                $stokUnit = DepartemenStok::find()->where([
+                    'barang_id' => $model->barang_id,
+                    'departemen_id' => $model->dispenser->departemen_id
+                ]);
+
+                $stokUnit = $stokUnit->one();
+
+                if(!empty($stokUnit))
+                {
+                    $stokUnit->stok_bulan_lalu = $stokUnit->stok;
+                    $stokUnit->stok = $model->qty;
+                    $stokUnit->hb = 0;
+                    $stokUnit->hj = 0;
+
+                }
+
+                else{
+                    $stokUnit = new DepartemenStok;
+                    $stokUnit->stok_minimal = 100;
+                    $stokUnit->hb = 0;
+                    $stokUnit->hj = 0;
+                    $stokUnit->stok_bulan_lalu = 0;
+                    $stokUnit->stok = $model->qty;
+                    $stokUnit->barang_id = $model->barang_id;
+                    $stokUnit->departemen_id = $model->dispenser->departemen_id;
+   
+                }
+
+                $stokUnit->tanggal = $model->tanggal;
+
+                $pars = [
+                    'kode_akun_lawan' => '1-1101',
+                    'perkiraan_id' => $model->barang->perkiraan_beli_id,
+                    'no_bukti' => 'REFILLTERA_'.$model->id,
+                    'keterangan' => 'Beli '.$model->barang->nama_barang,
+                    'tanggal' => $model->tanggal,
+                    'jumlah' => 0//$stokUnit->stok * $model->barang->harga_beli
+                ];
+
+                \app\models\Transaksi::insertTransaksi($pars);
+
+                if(!$stokUnit->save()){
+
+                    print_r($stokUnit->getErrors());exit;
+                }
+                else{
+                    
+                    $params = [
+                        'barang_id' => $stokUnit->barang_id,
+                        'kode_transaksi' => 'REFILLTERA_'.$stokUnit->id,
+                        'status' => 1,
+                        'qty' => $stokUnit->stok,
+                        'tanggal' => $model->tanggal,
+                        'departemen_id' => $model->dispenser->departemen_id,
+                        'stok_id' => $stokUnit->id,
+                        'keterangan' => 'REFILLTERA '.$stokUnit->barang->nama_barang.' Qty: '.$model->qty,
+                    ];
+
+                    $ks = \app\models\KartuStok::find()->where(['kode_transaksi'=>$params['kode_transaksi']])->one();
+
+                    if(empty($ks))
+                        \app\models\KartuStok::createKartuStok($params);
+                    else
+                        \app\models\KartuStok::updateKartuStok($params);
+
+                }
+
+                $transaction->commit();
+                Yii::$app->session->setFlash('success', "Data telah tersimpan");
+                // print_r($_POST);exit;
+                if(!empty($_POST['input-saja']))
+                    return $this->redirect(['index']);
+                else if(!empty($_POST['input-lagi']))
+                    return $this->redirect(['tera']);
+            }    
+            // else
+            // {
+            //     print_r($model->getErrors());exit;
+            // }
+             
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            throw $e;
+        }
+        
+
+        return $this->render('tera', [
+            'model' => $model,
+        ]);
+            
     }
 
     private function inputKas($barang_id, $bulan, $tahun)
@@ -175,7 +336,8 @@ class BbmJualController extends Controller
             //if callback returns true than commit transaction
             if ($model->load(Yii::$app->request->post())) 
             {
-
+                $barang = \app\models\SalesMasterBarang::findOne($model->barang_id);
+                $model->harga = $barang->harga_jual;
                 $model->qty = $model->stok_akhir - $model->stok_awal;
                 $model->save();
 

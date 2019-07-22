@@ -56,8 +56,8 @@ class KartuStokSearch extends KartuStok
         $this->tanggal_akhir = date('Y-m-d',strtotime($params['KartuStok']['tanggal_akhir']));
         if(!empty($params))
         {
-            $query->where(['departemen_id'=>Yii::$app->user->identity->departemen]);
-            $query->andWhere(['barang_id'=>$this->barang_id]);
+            // $query->where(['departemen_id'=>Yii::$app->user->identity->departemen]);
+            $query->where(['barang_id'=>$this->barang_id]);
             $query->andFilterWhere(['between', 'tanggal', $this->tanggal_awal, $this->tanggal_akhir]);
             $query->orderBy(['tanggal'=>SORT_ASC]);
         }

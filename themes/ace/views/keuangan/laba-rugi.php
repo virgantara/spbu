@@ -179,8 +179,6 @@ $form = ActiveForm::begin();
     </tbody>    
 </table>
 
-
-
 <h4>Pendapatan Lain</h4>
 <table class="table table-striped" >
     <thead>

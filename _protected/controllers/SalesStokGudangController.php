@@ -132,16 +132,19 @@ class SalesStokGudangController extends Controller
         $barang_id = !empty($_GET['barang_id']) ? $_GET['barang_id'] : 0;
         
         $searchModel = new KartuStokSearch();
+        $params = Yii::$app->request->queryParams;
         $searchModel->barang_id = $barang_id;
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-
+        $params['KartuStok']['tanggal_awal'] = date('Y-m-d',strtotime($_GET['KartuStok']['tanggal_awal']));
+        $params['KartuStok']['tanggal_akhir'] = date('Y-m-d',strtotime($_GET['KartuStok']['tanggal_akhir']));
+        $dataProvider = $searchModel->search($params);
+        
         $results = [];
 
         $barang = SalesMasterBarang::findOne($barang_id);
 
 
-
-        foreach($dataProvider->getModels() as $item){
+        foreach($dataProvider->getModels() as $item)
+        {
             // $listStok = $searchModel->searchByTanggal($item->barang_id);
             // $jml_masuk = 0;
             // $jml_keluar = 0;
@@ -165,7 +168,7 @@ class SalesStokGudangController extends Controller
                 'keterangan' => $item->keterangan
             ];
         }
-
+        
         $model = new KartuStok;
         return $this->render('kartu', [
             'searchModel' => $searchModel,

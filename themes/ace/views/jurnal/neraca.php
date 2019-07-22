@@ -9,7 +9,7 @@ use kartik\date\DatePicker;
 /* @var $searchModel app\models\JurnalSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'Laba Rugi';
+$this->title = 'Neraca';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="jurnal-index">
@@ -26,7 +26,7 @@ $model->tanggal_akhir = !empty($_GET['Jurnal']['tanggal_akhir']) ? $_GET['Jurnal
   
     <?php $form = ActiveForm::begin([
         'method' => 'get',
-        'action' => array('jurnal/laba-rugi')
+        'action' => array('jurnal/neraca')
     ]); ?>
     <div class="col-sm-3">
    <?= $form->field($model, 'tanggal_awal')->widget(
@@ -62,17 +62,16 @@ $model->tanggal_akhir = !empty($_GET['Jurnal']['tanggal_akhir']) ? $_GET['Jurnal
     <?php ActiveForm::end(); ?>
 
     <?php 
-   echo $this->render('_lb', [
+   echo $this->render('_neraca', [
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
             'model' => $model,
             'results' => $results,
-            'pendapatan' => $pendapatan,
-            'persediaan_awal' => $persediaan_awal,
+            'aktiva_lancar' => $aktiva_lancar,
+            'aktiva_tetap' => $aktiva_tetap,
+            'hutang' => $hutang,
+            'modal' => $modal,
             'persediaan_akhir' => $persediaan_akhir,
-            'pembelian' => $pembelian,
-            'beban' => $beban,
-            'bebanLain' => $bebanLain
         ]); 
     ?>
    

@@ -111,8 +111,7 @@ class BbmDroppingController extends Controller
                     $stokUnit->stok = $model->jumlah;
                     $stokUnit->barang_id = $model->barang_id;
                     $stokUnit->departemen_id = $model->departemen_id;
-
-                    
+   
                 }
 
                 $stokUnit->tanggal = $model->tanggal;

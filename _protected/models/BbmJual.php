@@ -129,8 +129,7 @@ class BbmJual extends \yii\db\ActiveRecord
             return false;
         }
 
-        $barang = \app\models\SalesMasterBarang::findOne($this->barang_id);
-        $this->harga = $barang->harga_jual;
+        
         // $this->tanggal_tempo = date('Y-m-d',strtotime($this->tanggal_tempo));
         return true;
     }

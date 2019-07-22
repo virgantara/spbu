@@ -36,6 +36,125 @@ class JurnalController extends Controller
         ];
     }
 
+    public function actionNeraca()
+    {
+        $searchModel = new JurnalSearch();
+
+        $model = new Jurnal;
+        $tanggal_awal = !empty($_GET['Jurnal']['tanggal_awal']) ? date('Y-m-d',strtotime($_GET['Jurnal']['tanggal_awal'])) : date('Y-m-01');
+        $tanggal_akhir = !empty($_GET['Jurnal']['tanggal_akhir']) ? date('Y-m-d',strtotime($_GET['Jurnal']['tanggal_akhir'])) : date('Y-m-d');
+        $model->tanggal_awal = $tanggal_awal;
+        $model->tanggal_akhir = $tanggal_akhir;
+         $results = [];
+        $aktiva_lancar = Perkiraan::find();
+        $aktiva_lancar->where([
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
+        ]);
+        $params = Yii::$app->request->queryParams;
+        $aktiva_lancar->andFilterWhere(['like','kode','1-1%',false]);
+        $aktiva_lancar->orderBy(['kode'=>SORT_ASC]);       
+        $aktiva_lancar = $aktiva_lancar->all();
+        
+        foreach($aktiva_lancar as $q1 => $m1)
+        {
+            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
+            $jumlah = $query->sum('jumlah');
+
+            $params['Jurnal']['perkiraan_id'] = $m1->id;
+            $results['aktiva_lancar'][$m1->id] = [
+                'kode' => $m1->kode,
+                'nama' => $m1->nama,
+                'jumlah' => $jumlah,
+            ];
+        }
+        $aktiva_tetap = Perkiraan::find();
+        $aktiva_tetap->where([
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
+        ]);
+        $aktiva_tetap->andFilterWhere(['like','kode','1-2%',false]);
+        $aktiva_tetap->orderBy(['kode'=>SORT_ASC]);       
+        $aktiva_tetap = $aktiva_tetap->all();
+        
+        foreach($aktiva_tetap as $q1 => $m1)
+        {
+            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
+            $jumlah = $query->sum('jumlah');
+
+            $params['Jurnal']['perkiraan_id'] = $m1->id;
+            $results['aktiva_tetap'][$m1->id] = [
+                'kode' => $m1->kode,
+                'nama' => $m1->nama,
+                'jumlah' => $jumlah,
+            ];
+        }
+
+        $persediaan_akhir = KartuStok::find();
+        $persediaan_akhir->joinWith(['barang as b']);
+        $persediaan_akhir->where([
+            'b.id_perusahaan'=>Yii::$app->user->identity->perusahaan_id
+        ]);
+        $persediaan_akhir->andFilterWhere(['like','kode_transaksi','JUAL_%',false]);
+        $persediaan_akhir->andWhere(['between','tanggal',$tanggal_awal,$tanggal_akhir]);
+        $persediaan_akhir = $persediaan_akhir->all();
+
+
+        $hutang = Perkiraan::find();
+        $hutang->where([
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
+        ]);
+
+        $hutang->andFilterWhere(['like','kode','2-%',false]);
+        $hutang->orderBy(['kode'=>SORT_ASC]);
+        $hutang = $hutang->all();
+        
+        foreach($hutang as $q1 => $m1)
+        {
+            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
+            $jumlah = $query->sum('jumlah');
+
+            $params['Jurnal']['perkiraan_id'] = $m1->id;
+            $results['hutang'][$m1->id] = [
+                'kode' => $m1->kode,
+                'nama' => $m1->nama,
+                'jumlah' => $jumlah,
+            ];
+        }
+
+        $modal = Perkiraan::find();
+        $modal->where([
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
+        ]);
+
+        $modal->andFilterWhere(['like','kode','3-%',false]);
+        $modal->orderBy(['kode'=>SORT_ASC]);
+        $modal = $modal->all();
+        
+        foreach($modal as $q1 => $m1)
+        {
+            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
+            $jumlah = $query->sum('jumlah');
+
+            $params['Jurnal']['perkiraan_id'] = $m1->id;
+            $results['modal'][$m1->id] = [
+                'kode' => $m1->kode,
+                'nama' => $m1->nama,
+                'jumlah' => $jumlah,
+            ];
+        }
+
+        return $this->render('neraca', [
+            'searchModel' => $searchModel,
+            'model' => $model,
+            'dataProvider' => $dataProvider,
+            'aktiva_lancar' => $aktiva_lancar,
+            'aktiva_tetap' => $aktiva_tetap,
+            'hutang' => $hutang,
+            'modal' => $modal,
+            'persediaan_akhir' => $persediaan_akhir,
+            'results'=>$results
+        ]);
+    }
+
     public function actionLabaRugi()
     {
         $searchModel = new JurnalSearch();
@@ -61,6 +180,14 @@ class JurnalController extends Controller
 
         $beban->andFilterWhere(['like','kode','5-%',false]);
         $beban->orderBy(['kode'=>SORT_ASC]);
+
+        $bebanLain = Perkiraan::find();
+        $bebanLain->where([
+            'perusahaan_id'=>Yii::$app->user->identity->perusahaan_id
+        ]);
+
+        $bebanLain->andFilterWhere(['like','kode','8-%',false]);
+        $bebanLain->orderBy(['kode'=>SORT_ASC]);
 
         $results = [];
         $params = Yii::$app->request->queryParams;
@@ -127,6 +254,23 @@ class JurnalController extends Controller
             ];
             // }
         }
+
+        $bebanLain = $bebanLain->all();
+        foreach($bebanLain as $q1 => $m1)
+        {
+            // foreach($m1->perkiraans as $q2 => $m2)
+            // {
+            $query = Transaksi::find()->where(['perkiraan_id'=>$m1->id]);
+            $jumlah = $query->sum('jumlah');
+
+            $params['Jurnal']['perkiraan_id'] = $m1->id;
+            $results['bebanLain'][$m1->id] = [
+                'kode' => $m1->kode,
+                'nama' => $m1->nama,
+                'jumlah' => $jumlah,
+            ];
+            // }
+        }
         
         // print_r($results);exit;
         return $this->render('lb', [
@@ -138,6 +282,7 @@ class JurnalController extends Controller
             'persediaan_akhir' => $persediaan_akhir,
             'pembelian' => $pembelian,
             'beban' => $beban,
+            'bebanLain' => $bebanLain,
             'results'=>$results
         ]);
     }

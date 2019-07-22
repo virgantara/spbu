@@ -1,7 +1,7 @@
 <?php 
 if(!empty($export)){
     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment;filename="laporan_mutasi_masuk.xls"');
+            header('Content-Disposition: attachment;filename="laporan_neraca.xls"');
             header('Cache-Control: max-age=0');
 
      ?>
@@ -9,7 +9,7 @@ if(!empty($export)){
         <tr>
             <td colspan="8" style="text-align: center">
                 
-                <h1>Laporan Tentang Penerimaan Obat</h1>
+                <h1>Laporan Laba Rugi</h1>
             </td>
         </tr>
     </table>
@@ -230,6 +230,34 @@ $total_akhir += $akhir;
             foreach($beban as $q1 => $m1)
             {
                     $data = $results['beban'][$m1->id];
+                
+                   $kode = $data['kode'];
+                    $nama = $data['nama'];
+                    $jumlah = $data['jumlah'];
+                   $periode_berjalan = $jumlah;
+                   $total_periode_berjalan_beban += $periode_berjalan;
+                   $awal = 0;
+                   $akhir = $awal + $periode_berjalan;
+
+                   $total_awal += $awal;
+                   $total_akhir += $akhir;
+                   if($jumlah == 0) continue;
+            ?>
+            <tr>
+                <td colspan="2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?=$nama;?></td>
+                <td  style="text-align: right"><?=\app\helpers\MyHelper::formatRupiah($periode_berjalan,2);?></td>
+                
+            </tr>
+            <?php
+            }
+            ?>
+             <tr>
+                <td colspan="6"><strong>BEBAN LAIN-LAIN</strong></td>
+            </tr>
+            <?php
+            foreach($bebanLain as $q1 => $m1)
+            {
+                    $data = $results['bebanLain'][$m1->id];
                 
                    $kode = $data['kode'];
                     $nama = $data['nama'];

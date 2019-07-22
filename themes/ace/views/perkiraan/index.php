@@ -81,7 +81,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     ?>
                     <tr>
                         <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                             <?=$m5->kode?>  <?=$m5->nama?></td>
                         <td><?=\yii\helpers\Html::a('Update',\yii\helpers\Url::to(['perkiraan/update','id'=>$m5->id]));?></td>
                     </tr>
